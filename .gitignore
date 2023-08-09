@@ -2,6 +2,7 @@
 node_modules
 /dist
 reference
+/src/router
 
 # local env files
 .env.local
