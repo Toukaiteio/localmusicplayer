@@ -166,10 +166,13 @@
               <div class="singer">{{ _item.singer }}</div>
             </div> 
             <div class="item_right">
-              <div class="player">
+              <div class="player" v-if="_index != pageState.now_playing_index || !pageState.isSongPlaying">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
                   <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
                 </svg>
+              </div>
+              <div class="player paused" v-else>
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"/></svg>
               </div>
             </div>
           </div>
@@ -181,7 +184,7 @@
               <div class="title">{{pageState.songList[pageState.now_index].title}}</div>
               <div class="singer">{{pageState.songList[pageState.now_index].singer}}</div>
             </div>
-            <div class="item_right" v-if="!pageState.isSongPlaying" @click="song_play();">
+            <div class="item_right" v-if="!pageState.isSongPlaying || !pageState.isSameSong" @click="song_play();">
               <div class="player">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
                   <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
@@ -198,7 +201,7 @@
       <div class="Mitem right">
         <div class="CoverDisplayer">
           <div class="SwipeCoverWrapper" :style="{top:`${pageState.cover_top}px`}" v-if="pageState.songList.length!=0">
-            <div class="SwipeCoverItem" v-for="(i_item,i_index) in pageState.songList" :key="'i_'+i_index">
+            <div class="SwipeCoverItem" v-for="(i_item,i_index) in pageState.songList" :key="'i_'+i_index" :class="{top:pageState.now_index==i_index}">
               <img :src="i_item.cover">
             </div>
             
@@ -218,15 +221,39 @@
           </div>
         </div>
         <div class="ControlBar">
-          <div class="cb_item double wb">
-            <div class="content _l">#</div>
-            <div class="content _r">#</div>
+          <div class="cb_white_cover" :class="{cbc_left:pageState.controlBarSelection==0,cbc_right:pageState.controlBarSelection==1}"></div>
+          <div class="cb_item df" @click="()=>{pageState.controlBarSelection=0;}">
+            <div class="content">
+              <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg>         
+            </div>
+          </div>
+          <div class="cb_item df" @click="()=>{pageState.controlBarSelection=1;}">
+            <div class="content">
+              <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"/></svg>
+            </div>
           </div>
           <div class="cb_item longer">
-            <div class="content">#</div>
+            <div class="content l_l volume" :class="{l_left:pageState.controlBarSelection==0,l_right:pageState.controlBarSelection==1}">
+              <div class="slider" id="volume-slider">
+                <div class="progress">
+                  <div class="progress_white" :style="{left:`${pageState.volume}%`}"></div>
+                </div>
+                <div class="dot" :style="{left:`${pageState.volume}%`}" @mousedown="slider_event_handler.volume_slider_handler" :class="{onMoving:pageState.isMovingVolumeBar}"></div>
+              </div>
+            </div>
+            <div class="content l_r" :class="{l_left:pageState.controlBarSelection==0,l_right:pageState.controlBarSelection==1}">
+              <div class="slider" id="music-slider">
+                <div class="progress">
+                  <div class="progress_white" :style="{left:`${pageState.musicprogress}%`}"></div>
+                </div>
+                <div class="dot" :style="{left:`${pageState.musicprogress}%`}" @mousedown="slider_event_handler.music_slider_handler" :class="{onMoving:!pageState.isAllowChangeMusicProgress}"></div>
+              </div>
+            </div>
           </div>
           <div class="cb_item wb">
-            <div class="content">#</div>
+            <div class="content">
+              <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -242,12 +269,19 @@ const LIST_KEY="ALLImportList"
 // const mmb=require('music-metadata-browser')
 
 // TO DO LIST：
-// Music Play on CANVAS
-// Music Data Save in IndexedDB
-// More Accurate Check Same Song
+// Music wave on CANVAS - postpone
+// lyrics displayer
+// Music Data Save in IndexedDB √
+// More Accurate Check Same Song √
+// paused btn should check is the same song. √
+// play function should check has the same song was playing. √
+// volume&music slider √
+
 const BASEMENT_START=186;
 const BASEMENT_HEIGHT=95;
 const BASEMENT_HEIGHT_COVER=505;
+const DEFAULT_VOLUME=0.6;
+//get volume
 const pageState=reactive({
   list_top:BASEMENT_START,
   cover_top:0, //5.31 * list_top
@@ -258,8 +292,10 @@ const pageState=reactive({
   swipe_start_timestamp:-1,
   swipe_ori_start_y:-1,
   now_mouse_y:-1,
+  now_mouse_x:-1,
   is_swipe_end:false,
   songList:[],
+  now_playing_index:-1,
   is_swipe_command_waiting:false,
   is_swipe_cancel:false,
   is_file_drag_in:false,
@@ -269,9 +305,16 @@ const pageState=reactive({
   is_find_same:false,
   isDBReady:false,
   isInitDone:false,
+  controlBarSelection:-1,
   isSongPlaying:false,
+  isCancelForNonMouseEvent:false,
   canvas_el:null,
+  volume:0,
+  musicprogress:0,
+  isMovingVolumeBar:false,
+  isAllowChangeMusicProgress:true,
   _ctx:null,
+  isSameSong:true,
   _now_playing:null,
   // _audio_context:null, new AudioContext
   _cursor:_cursor_working,
@@ -291,7 +334,68 @@ const pageState=reactive({
     _h_song_bucket_id:"",
   },
   is_show_cursor:true,
-})
+});
+const _t_v=localStorage.getItem("volume");
+if(_t_v==null){
+  pageState.volume=DEFAULT_VOLUME*100;
+  localStorage.setItem("volume",DEFAULT_VOLUME*100);
+}else{
+  pageState.volume=parseInt(_t_v);
+}
+const slider_event_handler={
+  volume_bar_el:null,
+  volume_slider_handler(e){
+    if(this.volume_bar_el==null){
+      this.volume_bar_el=document.getElementById("volume-slider");
+    }
+    pageState.isCancelForNonMouseEvent=true;
+    pageState.isMovingVolumeBar=true;
+    let start_pos_x=pageState._cursor_pos[0];
+    if(e.button==0){
+        pageState.move_up_event_id=setInterval(()=>{
+          const _target=((pageState._cursor_pos[0]-start_pos_x)/parseFloat(getComputedStyle(this.volume_bar_el).width))*100;
+          if(_target!=0){
+              if(pageState.volume+_target<0){
+                pageState.volume=0;
+              }else if(pageState.volume+_target>100){
+                pageState.volume=100;
+              }else{
+                pageState.volume+=_target;
+              }
+              set_volume(pageState.volume);
+              start_pos_x=pageState._cursor_pos[0];
+          }
+        }
+      ,50)
+    }
+  },
+  music_bar_el:null,
+  music_slider_handler(e){
+    if(this.music_bar_el==null){
+      this.music_bar_el=document.getElementById("music-slider");
+    }
+    pageState.isCancelForNonMouseEvent=true;
+    pageState.isAllowChangeMusicProgress=false;
+    let start_pos_x=pageState._cursor_pos[0];
+    if(e.button==0){
+        pageState.move_up_event_id=setInterval(()=>{
+          const _target=((pageState._cursor_pos[0]-start_pos_x)/parseFloat(getComputedStyle(this.music_bar_el).width))*100;
+          if(_target!=0){
+              if(pageState.musicprogress+_target<0){
+                pageState.musicprogress=0;
+              }else if(pageState.musicprogress+_target>100){
+                pageState.musicprogress=100;
+              }else{
+                pageState.musicprogress+=_target;
+              }
+              start_pos_x=pageState._cursor_pos[0];
+          }
+        }
+      ,50)
+    }
+  }
+
+}
 const dragTrigger=(e)=>{
   if(typeof e["dataTransfer"]["files"] != "undefined"){
     pageState.is_file_drag_in=true;
@@ -413,6 +517,18 @@ const commonBeforeClosePW=()=>{
   pageState.is_on_working=false;
   pageState.is_find_same=false;
 }
+const set_volume=(val)=>{
+  if(pageState._now_playing!=null){
+    pageState._now_playing.volume=val/100;
+    localStorage.setItem("volume",val);
+  }
+}
+const audio_seek=(percent)=>{
+  if(pageState._now_playing!=null){
+    pageState._now_playing.currentTime=pageState._now_playing.duration*(percent/100);
+    // console.log(pageState._now_playing.duration*(percent/100),(percent/100),pageState._now_playing.duration,pageState._now_playing.currentTime)
+  }
+}
 const song_play=()=>{
   if(pageState.canvas_el==null){
     pageState.canvas_el=document.getElementById("s_canvas_el");
@@ -421,17 +537,33 @@ const song_play=()=>{
   if(pageState._now_playing==null){
     const _t_cs=pageState.songList[pageState.now_index];
     const audio=new Audio(_t_cs.src);
+    
+    // console.log(audio.volume);
+    audio.volume=pageState.volume/100;
+    pageState._now_playing=audio;
+  }else if(pageState.songList[pageState.now_index].src!=pageState._now_playing.currentSrc){
+    const _t_cs=pageState.songList[pageState.now_index];
+    const audio=new Audio(_t_cs.src);
+    audio.volume=pageState.volume/100;
     pageState._now_playing=audio;
   }
-
   pageState._now_playing.play();
   if(pageState._now_playing.onended==null){
     pageState._now_playing.onended=()=>{
-      pageState._now_playing.duration=0;
+      pageState._now_playing.currentTime=0;
       song_pause();
     }
   }
+  if(pageState._now_playing.ontimeupdate==null){
+    pageState._now_playing.ontimeupdate=()=>{
+      if(pageState.isAllowChangeMusicProgress){
+          pageState.musicprogress=(pageState._now_playing.currentTime/pageState._now_playing.duration)*100;
+        }
+      }
+  }
   pageState.isSongPlaying=true;
+  pageState.isSameSong=true;
+  pageState.now_playing_index=pageState.now_index;
 }
 const song_pause=()=>{
   if(pageState._now_playing!=null){
@@ -473,11 +605,12 @@ const saveData=()=>{
   _t_l_a.push(pageState.modify_song_data_bucket._h_song_bucket_id);
   localStorage.setItem(LIST_KEY,JSON.stringify(_t_l_a));
   // _h_src cover _h_song_bucket_id
+  const cachedSize=JSON.stringify(pageState.modify_song_data_bucket).length;
   let _total_cost=localStorage.getItem("cachedTotal");
   if(_total_cost==null){
-    localStorage.setItem("cachedTotal",pageState.modify_song_data_bucket._h_song_size);
+    localStorage.setItem("cachedTotal",cachedSize);
   }else{
-    localStorage.setItem("cachedTotal",parseInt(_total_cost)+pageState.modify_song_data_bucket._h_song_size);
+    localStorage.setItem("cachedTotal",parseInt(_total_cost)+cachedSize);
   }
   _DB.DBStorage_setItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
     title:pageState.modify_song_data_bucket.title,
@@ -691,6 +824,9 @@ const fileImportHandler=(e)=>{
 //   }
 // }
 const goByIndex=(index)=>{
+  if(index!=pageState.now_index){
+    pageState.isSameSong=false;
+  }
   if(pageState.move_up_event_id!=-1){
     clearInterval(pageState.move_up_event_id);
     pageState.move_up_event_id=-1;
@@ -948,7 +1084,7 @@ const MouseSwipeHandler_CancelController=(e)=>{
   pageState.is_swipe_cancel=true;
   pageState.is_swipe_command_waiting=false;
   if(e.button==0){
-    if(!pageState.is_swipe_end){
+    if(!pageState.is_swipe_end&&!pageState.isCancelForNonMouseEvent){
       pageState.now_mouse_y=e.clientY;
       pageState.is_swipe_end=true;
       clearInterval(pageState.move_up_event_id);
@@ -963,8 +1099,16 @@ const MouseSwipeHandler_CancelController=(e)=>{
       }else{
         KeepSwipeWithDecreasingSpeed(_t_speed);
       }
+    }else if(pageState.isCancelForNonMouseEvent){
+      clearInterval(pageState.move_up_event_id);
+      pageState.move_up_event_id=-1;
+      pageState.isCancelForNonMouseEvent=false;
       
-      
+      if(!pageState.isAllowChangeMusicProgress){
+        audio_seek(pageState.musicprogress);
+      }
+      pageState.isAllowChangeMusicProgress=true;
+      pageState.isMovingVolumeBar=false;
     }
   }
 }
@@ -1500,12 +1644,20 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               margin-left: 24px;
               width: 100%;
               font-size: 28px;
+              word-break: keep-all;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              overflow: hidden;
             }
             .singer{
               // height: 40%;
               margin-left: 24px;
               width: 100%;
               font-size: 16px;
+              word-break: keep-all;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              overflow: hidden;
             }
           }
           .item_right{
@@ -1516,8 +1668,12 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             justify-content: center;
             align-items: center;
             color: $generalWhite;
+            fill:$generalWhite;
             svg{
               font-size: 58px;
+            }
+            .player.paused{
+              transform: $generalAngle;
             }
           }
         }
@@ -1571,11 +1727,14 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               // height: 60%;
               padding: 3px;
               margin-left: 24px;
+              padding-right: 16px;
+              box-sizing: border-box;
               width: 100%;
               font-size: 26px;
               word-break: keep-all;
               white-space: nowrap;
               text-overflow: ellipsis;
+              overflow: hidden;
             }
             .singer{
               // height: 40%;
@@ -1585,6 +1744,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               word-break: keep-all;
               white-space: nowrap;
               text-overflow: ellipsis;
+              overflow: hidden;
             }
           }
           .item_right{
@@ -1648,16 +1808,20 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             }
           }
         .SwipeCoverWrapper{
+          user-select: none;
           z-index: 23;
           position: absolute;
           // top: 0px;
           left: -55px;
           // transform: $generalContentAngle;
           width: 100%;
-          
+          .SwipeCoverItem.top{
+            z-index: 34;
+          }
           .SwipeCoverItem{
             height: 505px;
             display: flex;
+            position: relative;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -1680,7 +1844,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               user-select: none;
             }
             img{
-              height: 125%;
+              height: 100%;
               width: 125%;
               transform: $generalContentAngle translateX(5%);
               object-fit: cover;
@@ -1694,14 +1858,33 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         // filter: drop-shadow();
       }
       .ControlBar{
+        user-select: none;
         margin-top: 32px;
         height: 68px;
         width: 100%;
         box-shadow: 0px 0px 24px gray;
         // border: 1px solid black;
         display: flex;
+        position: relative;
         background-color: $generalLessDarkenCover;
+        .cb_white_cover{
+          width: 15%;
+          height: 100%;
+          position: absolute;
+          box-sizing: border-box;
+          top: 0;
+          background-color: $generalWhite;
+          left: 0;
+          z-index: 32;
+        }
+        .cb_white_cover.cbc_left{
+          animation: goLeft 0.2s linear forwards;
+        }
+        .cb_white_cover.cbc_right{
+          animation: goRight 0.2s linear forwards;
+        }
         .cb_item{
+          z-index: 33;
           width: 15%;
           height: 100%;
           text-align: center;
@@ -1709,6 +1892,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
           justify-content: center;
           align-items: center;
           .content{
+            fill: $generalWhite;
             transform: $generalContentAngle;
             font-size: 32px;
           }
@@ -1719,10 +1903,86 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
           height: 100%;
           background-color: transparent;
           color: $generalWhite;
+          overflow: hidden;
+          justify-content: center;
+          position: relative;
+          align-items: center;
+          .l_l{
+            position: absolute;
+            left: -100%;
+          }
+          .l_r{
+            position: absolute;
+          }
+          .l_l.l_left{
+            animation: goLeft 0.2s linear forwards;
+          }
+          .l_l.l_right{
+            animation: goRight 0.2s linear forwards;
+          }
+          .l_r.l_left{
+            animation: goLeft 0.2s linear forwards;
+          }
+          .l_r.l_right{
+            animation: goRight 0.2s linear forwards;
+          }
+          .content{
+            width: 100%;
+            height: 100%;
+            transform: none;
+            padding: 20px;
+            box-sizing: border-box;
+            .slider{
+              width: 100%;
+              height: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+              .progress{
+                position: relative;
+                width: 100%;
+                height: 5px;
+                overflow: hidden;
+                background-color: $generalUnactiveWhite;
+              }
+              .progress_white{
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                background-color: $generalWhite;
+                position: absolute;
+              }
+              .dot{
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 12px;
+                background-color: $generalWhite;
+                box-sizing: border-box;
+                border: 1px solid $generalLightenerWhite;
+              }
+              .dot.onMoving{
+                background-color: $generalUnactiveWhite !important;
+              }
+            }
+          }
+        }
+        .cb_item.df{
+          .content{
+            color: $generalLightenerWhite !important;
+            fill: $generalLightenerWhite !important;
+          }
         }
         .cb_item.wb{
           background-color: $generalWhite;
-          color: $generalLightenerWhite;
+          .content{
+            color: $generalLightenerWhite !important;
+            fill: $generalLightenerWhite !important;
+          }
+          
         }
         .cb_item.double{
           width: 30%;
@@ -1730,6 +1990,22 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
       }
     }
+  }
+}
+@keyframes goRight {
+  0%{
+    transform: translateX(0%);
+  }
+  100%{
+    transform: translateX(100%);
+  }
+}
+@keyframes goLeft {
+  0%{
+    transform: translateX(100%);
+  }
+  100%{
+    transform: translateX(0%);
   }
 }
 </style>
