@@ -1,11 +1,30 @@
 <template>
   <!-- <div class="MouseCover"></div> -->
-  <div class="FileDealer" @dragleave="dragDestoryer" v-show="pageState.is_file_drag_in&&!pageState.is_show_modify_window">
+  <div class="FileDealer" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler" @dragleave="dragDestoryer" v-show="pageState.is_file_drag_in&&!pageState.is_show_modify_window">
       <input class="_f_loader" type="file" @change="fileImportHandler"/>
       <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M128 64c0-35.3 28.7-64 64-64H352V128c0 17.7 14.3 32 32 32H512V448c0 35.3-28.7 64-64 64H192c-35.3 0-64-28.7-64-64V336H302.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H128V64zm0 224v48H24c-13.3 0-24-10.7-24-24s10.7-24 24-24H128zM512 128H384V0L512 128z"/></svg>
       <div class="Content">在此处拖入文件</div>
   </div>
-  <div class="MainBox"
+  <div class="MousePointerWrapper">
+    <div class="mouseItem" v-show="pageState.is_show_cursor"  :style="{left:`${pageState._cursor_pos[0]}px`,top:`${pageState._cursor_pos[1]}px`}">
+      <img v-if="pageState._cursor!=''" :src="pageState._cursor">
+    </div>
+  </div>
+  <div class="MainBox LoadingScreen" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler" v-if="!pageState.isInitDone">
+    <div class="letter-holder">
+          <div class="l-1 letter">L</div>
+          <div class="l-2 letter">o</div>
+          <div class="l-3 letter">a</div>
+          <div class="l-4 letter">d</div>
+          <div class="l-5 letter">i</div>
+          <div class="l-6 letter">n</div>
+          <div class="l-7 letter">g</div>
+          <div class="l-8 letter">.</div>
+          <div class="l-9 letter">.</div>
+          <div class="l-10 letter">.</div>
+        </div>
+  </div>
+  <div class="MainBox ShowUp" v-else
         @mousemove="MouseSwipeHandler_SwipeController"
         @mouseup="MouseSwipeHandler_CancelController"
         @mouseleave="MouseSwipeHandler_CancelController"
@@ -14,7 +33,7 @@
         @touchend="MouseSwipeHandler_CancelController"
         @contextmenu.prevent :style="{background:'lightgray'}">
 
-    <div class="MusicWrapper">
+    <div class="MusicWrapper" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler">
       <div class="PopupWindowModifyWrapper" v-if="pageState.is_show_modify_window">
         <div class="PopupWindowModify">
           <div class="title">
@@ -162,11 +181,16 @@
               <div class="title">{{pageState.songList[pageState.now_index].title}}</div>
               <div class="singer">{{pageState.songList[pageState.now_index].singer}}</div>
             </div>
-            <div class="item_right">
+            <div class="item_right" v-if="!pageState.isSongPlaying" @click="song_play();">
               <div class="player">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
                   <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
                 </svg>
+              </div>
+            </div>
+            <div class="item_right paused" v-else @click="song_pause();">
+              <div class="player">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"/></svg>
               </div>
             </div>
           </div>
@@ -180,7 +204,7 @@
             
           </div>
           <div class="SwipeItemEffectCoverWrapper">
-              <canvas class="SwipeItemEffectCover">
+              <canvas id="s_canvas_el" class="SwipeItemEffectCover">
 
               </canvas>
             </div>
@@ -212,6 +236,9 @@
 <script setup>
 import { reactive } from 'vue';
 import _parser, { parseV1Tag, parseV2Tag } from 'id3-parser';
+import _cursor_arrow from './assets/arrow.gif'
+import _cursor_working from './assets/working.gif'
+const LIST_KEY="ALLImportList"
 // const mmb=require('music-metadata-browser')
 
 // TO DO LIST：
@@ -240,6 +267,15 @@ const pageState=reactive({
   is_show_modify_image_importer:false,
   is_on_working:false,
   is_find_same:false,
+  isDBReady:false,
+  isInitDone:false,
+  isSongPlaying:false,
+  canvas_el:null,
+  _ctx:null,
+  _now_playing:null,
+  // _audio_context:null, new AudioContext
+  _cursor:_cursor_working,
+  _cursor_pos:[0,0],
   modify_song_data_bucket:{
     title:"",
     cover:"",
@@ -251,7 +287,10 @@ const pageState=reactive({
     _h_cover_mime:"",
     _h_song_u8a:[],
     _h_song_mime:"",
-  }
+    _h_song_size:0,
+    _h_song_bucket_id:"",
+  },
+  is_show_cursor:true,
 })
 const dragTrigger=(e)=>{
   if(typeof e["dataTransfer"]["files"] != "undefined"){
@@ -264,46 +303,92 @@ const dragDestoryer=()=>{
   pageState.is_file_drag_in=false;
   pageState.is_show_modify_image_importer=false;
 }
-// const dragTrigger_modify=(e)=>{
-//   if(typeof e["dataTransfer"]["files"] != "undefined"){
-    
-//     // console.log(e);
-//   }
+
+// async function loadArrowAssets(imageUrl) {
+//     return new Promise((resolve, reject) => {
+//       let canvas = document.createElement('canvas')
+//       const ctx = canvas.getContext('2d')
+//       let img = new Image()
+//       img.crossOrigin = 'Anonymous'
+//       img.src = imageUrl
+//       img.onload = function() {
+//         canvas.height = img.height
+//         canvas.width = img.width
+//         ctx.drawImage(img, 0, 0)
+//         const dataURL = canvas.toDataURL('image/gif', 1)
+//         resolve(dataURL)
+//         canvas = null
+//         img = null
+//       }
+//       img.onerror = function() {
+//         reject(new Error('Could not load image at ' + imageUrl))
+//       }
+//     })
 // }
-// const dragDestoryer_modify=()=>{
-  
-//   // console.log(e);
-// }
+const songDataResolver_init=(data)=>{
+  //title singer album cover src
+  const _t_result={}
+  _t_result["title"]=data["title"];
+  _t_result["singer"]=data["singer"];
+  _t_result["album"]=data["album"];
+  _t_result["cover"]=URL.createObjectURL(new Blob([data["_h_cover_u8a"]],{type: data["_h_cover_mime"]}))
+  _t_result["src"]=URL.createObjectURL(new Blob([data["_h_song_u8a"]],{type: data["_h_song_mime"]}))
+  return _t_result;
+}
+const Init_Common=()=>{
+  //SetCursor
+  pageState._cursor=_cursor_arrow;
+  //LoadMusicList
+  const _t_sl=localStorage.getItem(LIST_KEY);
+  if(_t_sl==null){
+    localStorage.setItem(LIST_KEY,"[]")
+  }else{
+    for(let __i__ of JSON.parse(_t_sl)){
+      _DB.DBStorage_getItem(__i__,(_v)=>{
+        const _t_sd=songDataResolver_init(_v);
+        pageState.songList.push(_t_sd);
+      })
+    }
+  }
+
+
+
+  //LoadMusicResource
+  //LoadLastPlayed
+  //LoadPlayerSetting
+  pageState.isInitDone=true;
+}
 const _DB={
-  isDBReady:false,
   indexedDBTarget:null,
   store_init(){
       const request = indexedDB.open("musicDatas", 1);
       request.onupgradeneeded = (event) => {
-        if(!this.isDBReady){
+        if(!pageState.isDBReady){
           const db = event.target.result;
           db.createObjectStore("Musics", { keyPath: "id" });
-          this.isDBReady=true;
+          pageState.isDBReady=true;
           this.indexedDBTarget=db;
+          Init_Common();
         }
       };
       request.onsuccess=(event)=>{
-        if(!this.isDBReady){
-          this.isDBReady=true;
+        if(!pageState.isDBReady){
+          pageState.isDBReady=true;
           this.indexedDBTarget=event.target.result;
+          Init_Common();
         }
       }
     },
     DBStorage_setItem(key,value){
       const transaction = this.indexedDBTarget.transaction("Musics", "readwrite");
       const objectStore = transaction.objectStore("Musics");
-      const imageObj = { id: key, musicData: value };
+      const imageObj = { id: key, ...value };
       objectStore.add(imageObj);
     },
     DBStorage_updateItem(key,value){
       const transaction = this.indexedDBTarget.transaction("Musics", "readwrite");
       const objectStore = transaction.objectStore("Musics");
-      const imageObj = { id: key, musicData: value };
+      const imageObj = { id: key, ...value };
       objectStore.put(imageObj);
     },
     DBStorage_getItem(key,callBack){
@@ -328,6 +413,32 @@ const commonBeforeClosePW=()=>{
   pageState.is_on_working=false;
   pageState.is_find_same=false;
 }
+const song_play=()=>{
+  if(pageState.canvas_el==null){
+    pageState.canvas_el=document.getElementById("s_canvas_el");
+    pageState._ctx=pageState.canvas_el.getContext("2d");
+  }
+  if(pageState._now_playing==null){
+    const _t_cs=pageState.songList[pageState.now_index];
+    const audio=new Audio(_t_cs.src);
+    pageState._now_playing=audio;
+  }
+
+  pageState._now_playing.play();
+  if(pageState._now_playing.onended==null){
+    pageState._now_playing.onended=()=>{
+      pageState._now_playing.duration=0;
+      song_pause();
+    }
+  }
+  pageState.isSongPlaying=true;
+}
+const song_pause=()=>{
+  if(pageState._now_playing!=null){
+    pageState._now_playing.pause();
+    pageState.isSongPlaying=false;
+  }
+}
 const closePW=()=>{
   commonBeforeClosePW();
   pageState.modify_song_data_bucket={
@@ -348,11 +459,49 @@ const saveData=()=>{
   pageState.songList.push({
     title:pageState.modify_song_data_bucket.title,
     cover:pageState.modify_song_data_bucket.cover,
+    album:pageState.modify_song_data_bucket.album,
     singer:pageState.modify_song_data_bucket.singer,
     src:pageState.modify_song_data_bucket._h_src
   });
+  const _t_l=localStorage.getItem(LIST_KEY)
+  if(_t_l!=null){
+    if(_t_l.indexOf(pageState.modify_song_data_bucket._h_song_bucket_id)!=-1){
+      pageState.modify_song_data_bucket._h_song_bucket_id+=`_${new Date().getTime()}`;
+    }
+  }
+  let _t_l_a=JSON.parse(_t_l);
+  _t_l_a.push(pageState.modify_song_data_bucket._h_song_bucket_id);
+  localStorage.setItem(LIST_KEY,JSON.stringify(_t_l_a));
+  // _h_src cover _h_song_bucket_id
+  let _total_cost=localStorage.getItem("cachedTotal");
+  if(_total_cost==null){
+    localStorage.setItem("cachedTotal",pageState.modify_song_data_bucket._h_song_size);
+  }else{
+    localStorage.setItem("cachedTotal",parseInt(_total_cost)+pageState.modify_song_data_bucket._h_song_size);
+  }
+  _DB.DBStorage_setItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
+    title:pageState.modify_song_data_bucket.title,
+    singer:pageState.modify_song_data_bucket.singer,
+    album:pageState.modify_song_data_bucket.album,
+    _h_filename:pageState.modify_song_data_bucket._h_filename,
+    _h_cover_u8a:pageState.modify_song_data_bucket._h_cover_u8a,
+    _h_cover_mime:pageState.modify_song_data_bucket._h_cover_mime,
+    _h_song_u8a:pageState.modify_song_data_bucket._h_song_u8a,
+    _h_song_mime:pageState.modify_song_data_bucket._h_song_mime,
+    _h_song_size:pageState.modify_song_data_bucket._h_song_size,
+  });
   closePW();
 }
+const MouseMovementHandler=(e)=>{
+  // console.log(e);
+  pageState.is_show_cursor=true;
+  pageState._cursor_pos[0]=e.pageX;
+  pageState._cursor_pos[1]=e.pageY;
+}
+const MouseHideHandler=()=>{
+  pageState.is_show_cursor=false;
+}
+
 const songDataResolver=(data)=>{
   pageState.modify_song_data_bucket["title"]=data["title"];
   pageState.modify_song_data_bucket["singer"]=data["singer"];
@@ -369,8 +518,17 @@ const songDataResolver=(data)=>{
   }
   pageState.modify_song_data_bucket["title"]=data["title"];
   pageState.modify_song_data_bucket["_h_filename"]=data["filename"];
+  pageState.modify_song_data_bucket["_h_song_size"]=data["filesize"];
   pageState.is_show_modify_window=true;
   pageState.is_show_modify_image_importer=false;
+  const _t_l=localStorage.getItem(LIST_KEY)
+  const resource_bucket_id=`${pageState.modify_song_data_bucket._h_song_size}_${pageState.modify_song_data_bucket._h_song_mime}`;
+  pageState.modify_song_data_bucket["_h_song_bucket_id"]=resource_bucket_id;
+  if(_t_l!=null){
+    if(_t_l.indexOf(resource_bucket_id)!=-1){
+      pageState.is_find_same=true;
+    }
+  }
 }
 const coverImportHandler=(e)=>{
   const _tFR=new FileReader();
@@ -400,6 +558,7 @@ const fileImportHandler=(e)=>{
   _tFR.readAsBinaryString(e.target.files[0]);
   _tFR.onload=(E)=>{
     const data=E.target.result
+    // console.log(E);
     const mime = e.target.files[0].type;
     if(mime.indexOf("audio")==-1){
       alert("Not Support!");
@@ -417,6 +576,7 @@ const fileImportHandler=(e)=>{
     if(typeof _t_parser_r["image"]=="undefined"){
       _t_parser_r["image"]={"data":[],"mime":""};
     }
+    
     const _t_f_obj={
       "title":_t_parser_r["title"] || e.target.files[0].name,
       "cover_u8a":_t_parser_r["image"]["data"] || [],
@@ -427,6 +587,7 @@ const fileImportHandler=(e)=>{
       "song_u8a":ia,
       "song_mime":mime,
       "filename":e.target.files[0].name,
+      "filesize":E.total
     }
     for(let __i__ of pageState.songList){
       if(__i__.title.indexOf(e.target.files[0].name.split('.')[0])!=-1){
@@ -440,6 +601,7 @@ const fileImportHandler=(e)=>{
     }
     e.target.value='';
     songDataResolver(_t_f_obj)
+    
     // console.log(_t_f_obj);
   }
   
@@ -718,7 +880,7 @@ const MouseSwipeHandler_StartController=(e)=>{
   if(!pageState.is_swipe_command_waiting){
   pageState.is_swipe_cancel=false;
   setTimeout(()=>{
-    console.log(e.button,pageState.is_swipe_cancel);
+    // console.log(e.button,pageState.is_swipe_cancel);
     if(e.button==0&&!pageState.is_swipe_cancel){
     if(pageState.move_up_event_id!=-1){
       clearInterval(pageState.move_up_event_id);
@@ -763,7 +925,7 @@ const MouseSwipeHandler_StartController=(e)=>{
               pageState.cover_top+=_target*5.31;
               // console.log(sum,_target,pageState.swipe_start_y,_t_num);
             }
-            console.log(pageState.cover_top);
+            // console.log(pageState.cover_top);
           }
       }
     },20)
@@ -821,7 +983,7 @@ $generalLessDarkenCover:#00000058;
 $generalDarkenCover:#000000a9;
 $generalAlertRed:rgba(249, 88, 88, 0.566);
 $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-.MouseCover{
+.MousePointerWrapper{
   position: absolute;
   top: 0;
   left: 0;
@@ -829,9 +991,21 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   height: 100vh;
   width: 100vw;
   background-color: transparent;
-  z-index: 22;
+  pointer-events: none;
+  z-index: 101;
+  overflow: hidden;
+  .mouseItem{
+    height: 45px;
+    width: 45px;
+    position: absolute;
+    img{
+      height: 100%;
+      width: 100%;
+    }
+  }
 }
 .FileDealer{
+  cursor:none;
   position: absolute;
   top: 0;
   left: 0;
@@ -864,7 +1038,69 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
     opacity: 0;
   }
 }
+.LoadingScreen{
+  cursor:none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color:lightgray;
+
+}
+.letter-holder {
+  padding: 16px;
+}
+.l-1 {
+  animation-delay: 0.48s;
+}
+.l-2 {
+  animation-delay: 0.6s;
+}
+.l-3 {
+  animation-delay: 0.72s;
+}
+.l-4 {
+  animation-delay: 0.84s;
+}
+.l-5 {
+  animation-delay: 0.96s;
+}
+.l-6 {
+  animation-delay: 1.08s;
+}
+.l-7 {
+  animation-delay: 1.2s;
+}
+.l-8 {
+  animation-delay: 1.32s;
+}
+.l-9 {
+  animation-delay: 1.44s;
+}
+.l-10 {
+  animation-delay: 1.56s;
+}
+.letter {
+  float: left;
+  font-size: 32px;
+  color: $generalWhite;
+  animation-name: loading;
+  animation-duration: 1.6s;
+  animation-iteration-count: infinite;
+  animation-direction: linear;
+}
+.ShowUp{
+  animation: loading 1s linear forwards;
+}
+@keyframes loading{
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 .MainBox{
+  cursor:none;
   height: 100vh;
   width: 100vw;
   min-width: 1030px;
@@ -1312,7 +1548,6 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
       .selected_item{
           height: 95px;
           width: 100%;
-          pointer-events: none;
           top: 186px;
           left: -12px;
           padding: 12px;
@@ -1337,13 +1572,19 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               padding: 3px;
               margin-left: 24px;
               width: 100%;
-              font-size: 28px;
+              font-size: 26px;
+              word-break: keep-all;
+              white-space: nowrap;
+              text-overflow: ellipsis;
             }
             .singer{
               // height: 40%;
               margin-left: 24px;
               width: 100%;
-              font-size: 16px;
+              font-size: 15px;
+              word-break: keep-all;
+              white-space: nowrap;
+              text-overflow: ellipsis;
             }
           }
           .item_right{
@@ -1363,7 +1604,13 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             }
             svg{
               transform: $generalContentAngle;
+              fill: $generalLightenerWhite;
               font-size: 72px;
+            }
+          }
+          .item_right.paused{
+            svg{
+              transform: none;
             }
           }
         }
