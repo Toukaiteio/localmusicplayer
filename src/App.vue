@@ -546,7 +546,7 @@ const song_play=()=>{
     pageState._now_playing.pause();
     pageState._now_playing.currentTime=0;
     pageState._now_playing.src=_t_cs.src;
-    pageState.volume=pageState.volume/100;
+    pageState._now_playing.volume=pageState.volume/100;
   }
   pageState._now_playing.play();
   if(pageState._now_playing.onended==null){
