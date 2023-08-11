@@ -543,9 +543,10 @@ const song_play=()=>{
     pageState._now_playing=audio;
   }else if(pageState.songList[pageState.now_index].src!=pageState._now_playing.currentSrc){
     const _t_cs=pageState.songList[pageState.now_index];
-    const audio=new Audio(_t_cs.src);
-    audio.volume=pageState.volume/100;
-    pageState._now_playing=audio;
+    pageState._now_playing.pause();
+    pageState._now_playing.currentTime=0;
+    pageState._now_playing.currentSrc=_t_cs.src;
+    pageState.volume=pageState.volume/100;
   }
   pageState._now_playing.play();
   if(pageState._now_playing.onended==null){
@@ -605,13 +606,13 @@ const saveData=()=>{
   _t_l_a.push(pageState.modify_song_data_bucket._h_song_bucket_id);
   localStorage.setItem(LIST_KEY,JSON.stringify(_t_l_a));
   // _h_src cover _h_song_bucket_id
-  const cachedSize=JSON.stringify(pageState.modify_song_data_bucket).length;
-  let _total_cost=localStorage.getItem("cachedTotal");
-  if(_total_cost==null){
-    localStorage.setItem("cachedTotal",cachedSize);
-  }else{
-    localStorage.setItem("cachedTotal",parseInt(_total_cost)+cachedSize);
-  }
+  // const cachedSize=JSON.stringify(pageState.modify_song_data_bucket).length;
+  // let _total_cost=localStorage.getItem("cachedTotal");
+  // if(_total_cost==null){
+  //   localStorage.setItem("cachedTotal",cachedSize);
+  // }else{
+  //   localStorage.setItem("cachedTotal",parseInt(_total_cost)+cachedSize);
+  // }
   _DB.DBStorage_setItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
     title:pageState.modify_song_data_bucket.title,
     singer:pageState.modify_song_data_bucket.singer,
