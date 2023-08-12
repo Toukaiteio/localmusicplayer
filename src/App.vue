@@ -32,7 +32,13 @@
         @touchmove="MouseSwipeHandler_SwipeController"
         @touchend="MouseSwipeHandler_CancelController"
         @contextmenu.prevent :style="{background:'lightgray'}">
-
+    <div class="ToastMessageWrapper">
+      <div class="ToastMessage" :class="{disappear:!pageState.is_show_toast,display:pageState.is_show_toast}">
+        <div class="content">
+          {{ pageState.toast_message }}
+        </div>
+      </div>
+    </div>
     <div class="MusicWrapper" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler">
       <div class="PopupWindowModifyWrapper" v-if="pageState.is_show_modify_window">
         <div class="PopupWindowModify">
@@ -74,7 +80,8 @@
                   </div>
                 </div>
                 <div class="pw_inputer_item alert" v-show="pageState.is_find_same">
-                  <div class="content">似乎在歌单中存在一首相同歌曲!</div>
+                  <div class="content" v-if="!pageState.is_modify_mode">似乎在歌单中存在一首相同歌曲!</div>
+                  <div class="content" v-else>你正在编辑一首已存在歌曲!</div>
                 </div>
               </div>
 
@@ -92,9 +99,9 @@
               <div class="placeHolder"></div>
               <div class="btns_Container">
                 <div class="pw_btn">
-                  <div class="content" @click="saveData">确定</div></div>
+                  <div class="content" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle" @click="saveData">确定</div></div>
                 <div class="pw_btn">
-                  <div class="content" @click="closePW">取消</div>
+                  <div class="content" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle" @click="closePW">取消</div>
                 </div>
               </div>
               
@@ -127,7 +134,7 @@
             </div>
           </div>
           <div class="subitem sright">
-            <div class="ssitem ssl">
+            <div class="ssitem ssl" @click="select_an_random_song" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
               <div class="random_icon">
                 <div class="_1"> &lt; </div>
                 <div class="_2"> ? </div>
@@ -138,7 +145,7 @@
               </div>
             </div>
             <div class="ssitem_divider"></div>
-            <div class="ssitem ssr">
+            <div class="ssitem ssr" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
               <div class="setting_icon">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-sliders" viewBox="0 0 16 16">
                   <path fill-rule="evenodd" d="M11.5 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM9.05 3a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0V3h9.05zM4.5 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM2.05 8a2.5 2.5 0 0 1 4.9 0H16v1H6.95a2.5 2.5 0 0 1-4.9 0H0V8h2.05zm9.45 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-2.45 1a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0v-1h9.05z"/>
@@ -146,6 +153,44 @@
               </div>
               <div class="title">
                 设置
+              </div>
+              <div class="setting_window" @mousedown="()=>{pageState.is_swipe_command_waiting=true;}" @touchstart="()=>{pageState.is_swipe_command_waiting=true;}" @mouseleave="pageState.is_swipe_command_waiting=false;" @mouseup="pageState.is_swipe_command_waiting=false;" @touchend="pageState.is_swipe_command_waiting=false;" @touchcancel="pageState.is_swipe_command_waiting=false;">
+                <div class="setting_item" v-if="(typeof pageState.songList[pageState.now_index]!='undefined')" @click="popUpDownload(pageState.songList[pageState.now_index].src,pageState.songList[pageState.now_index].filename)">
+                  <div class="title">下载选中歌曲</div>
+                  <div class="functionWrapper">
+                    <div class="setting_icon_set">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 464a208 208 0 1 1 0-416 208 208 0 1 1 0 416zM256 0a256 256 0 1 0 0 512A256 256 0 1 0 256 0zM376.9 294.6c4.5-4.2 7.1-10.1 7.1-16.3c0-12.3-10-22.3-22.3-22.3H304V160c0-17.7-14.3-32-32-32l-32 0c-17.7 0-32 14.3-32 32v96H150.3C138 256 128 266 128 278.3c0 6.2 2.6 12.1 7.1 16.3l107.1 99.9c3.8 3.5 8.7 5.5 13.8 5.5s10.1-2 13.8-5.5l107.1-99.9z"/></svg>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting_item" v-if="(typeof pageState.songList[pageState.now_playing_index]!='undefined')" @click="popUpDownload(pageState.songList[pageState.now_playing_index].src,pageState.songList[pageState.now_playing_index].filename)">
+                  <div class="title">下载播放的歌曲</div>
+                  <div class="functionWrapper">
+                    <div class="setting_icon_set">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 464a208 208 0 1 1 0-416 208 208 0 1 1 0 416zM256 0a256 256 0 1 0 0 512A256 256 0 1 0 256 0zM376.9 294.6c4.5-4.2 7.1-10.1 7.1-16.3c0-12.3-10-22.3-22.3-22.3H304V160c0-17.7-14.3-32-32-32l-32 0c-17.7 0-32 14.3-32 32v96H150.3C138 256 128 266 128 278.3c0 6.2 2.6 12.1 7.1 16.3l107.1 99.9c3.8 3.5 8.7 5.5 13.8 5.5s10.1-2 13.8-5.5l107.1-99.9z"/></svg>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting_item" v-if="(typeof pageState.songList[pageState.now_index]!='undefined')" @click="deleteSong(pageState.now_index)">
+                  <div class="title">删除选中歌曲</div>
+                  <div class="functionWrapper">
+                    <div class="setting_icon_set">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 464a208 208 0 1 1 0-416 208 208 0 1 1 0 416zM256 0a256 256 0 1 0 0 512A256 256 0 1 0 256 0zM376.9 294.6c4.5-4.2 7.1-10.1 7.1-16.3c0-12.3-10-22.3-22.3-22.3H304V160c0-17.7-14.3-32-32-32l-32 0c-17.7 0-32 14.3-32 32v96H150.3C138 256 128 266 128 278.3c0 6.2 2.6 12.1 7.1 16.3l107.1 99.9c3.8 3.5 8.7 5.5 13.8 5.5s10.1-2 13.8-5.5l107.1-99.9z"/></svg>
+                    </div>
+                  </div>
+                </div>
+                <div class="setting_item" v-if="(typeof pageState.songList[pageState.now_playing_index]!='undefined')" @click="deleteSong(pageState.now_playing_index)">
+                  <div class="title">删除播放中的歌曲</div>
+                  <div class="functionWrapper">
+                    <div class="setting_icon_set">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg>                    </div>
+                  </div>
+                </div>
+                <div class="setting_item">
+                  <div class="title">播放方式</div>
+                  <div class="functionWrapper">
+                    </div>
+                </div>
               </div>
             </div>
           </div>
@@ -160,7 +205,7 @@
           </div>
         </div>
         <div class="middle_item" v-else :style="{top:`${pageState.list_top}px`}">
-          <div class="list_item" v-for="(_item,_index) in pageState.songList" @click="goByIndex(_index)" :key="'si'+_index">
+          <div class="list_item" v-for="(_item,_index) in pageState.songList" @click="goByIndex(_index)" :key="'si'+_index" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
             <div class="item_left">
               <div class="title">{{ _item.title }}</div>
               <div class="singer">{{ _item.singer }}</div>
@@ -184,14 +229,14 @@
               <div class="title">{{pageState.songList[pageState.now_index].title}}</div>
               <div class="singer">{{pageState.songList[pageState.now_index].singer}}</div>
             </div>
-            <div class="item_right" v-if="!pageState.isSongPlaying || !pageState.isSameSong" @click="song_play();">
+            <div class="item_right" v-if="!pageState.isSongPlaying || !pageState.isSameSong" @click="song_play();" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
               <div class="player">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
                   <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
                 </svg>
               </div>
             </div>
-            <div class="item_right paused" v-else @click="song_pause();">
+            <div class="item_right paused" v-else @click="song_pause();" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
               <div class="player">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"/></svg>
               </div>
@@ -200,34 +245,49 @@
       </div>
       <div class="Mitem right">
         <div class="CoverDisplayer">
-          <div class="SwipeCoverWrapper" :style="{top:`${pageState.cover_top}px`}" v-if="pageState.songList.length!=0">
-            <div class="SwipeCoverItem" v-for="(i_item,i_index) in pageState.songList" :key="'i_'+i_index" :class="{top:pageState.now_index==i_index}">
-              <img :src="i_item.cover">
+          <div class="album_display" v-if="pageState.songList.length!=0">
+                <div class="content" v-if="pageState.songList[pageState.now_index].album.length>0">
+                  {{ pageState.songList[pageState.now_index].album }}
+                </div>
+                <div class="content" v-else>
+                  ~ UNKNOWN ~
+                </div>
+              </div>
+          <div class="CoverDisplayerWrapper">
+              <div class="SwipeCoverWrapper" :style="{top:`${pageState.cover_top}px`}" v-if="pageState.songList.length!=0">
+              <div class="SwipeCoverItem" v-for="(i_item,i_index) in pageState.songList" :key="'i_'+i_index" :class="{top:pageState.now_index==i_index}">
+                <img :src="i_item.cover" v-if="i_item.cover!=''">
+                <div class="AttentionCover" v-else>
+                  <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M88 0C74.7 0 64 10.7 64 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C120.5 112.3 128 119.9 128 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C119.5 47.7 112 40.1 112 24c0-13.3-10.7-24-24-24zM32 192c-17.7 0-32 14.3-32 32V416c0 53 43 96 96 96H288c53 0 96-43 96-96h16c61.9 0 112-50.1 112-112s-50.1-112-112-112H352 32zm352 64h16c26.5 0 48 21.5 48 48s-21.5 48-48 48H384V256zM224 24c0-13.3-10.7-24-24-24s-24 10.7-24 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C232.5 112.3 240 119.9 240 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C231.5 47.7 224 40.1 224 24z"/></svg>
+                  <div class="slogan">Enjoy your life.</div>
+                </div>
+              </div>
+              
             </div>
-            
-          </div>
-          <div class="SwipeItemEffectCoverWrapper">
-              <canvas id="s_canvas_el" class="SwipeItemEffectCover">
+            <div class="SwipeItemEffectCoverWrapper">
+                <canvas id="s_canvas_el" class="SwipeItemEffectCover">
 
-              </canvas>
-            </div>
-          <div class="SwipeCoverWrapper" v-if="pageState.songList.length==0">
-            <div class="SwipeCoverItem">
-              <div class="AttentionCover">
-                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M88 0C74.7 0 64 10.7 64 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C120.5 112.3 128 119.9 128 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C119.5 47.7 112 40.1 112 24c0-13.3-10.7-24-24-24zM32 192c-17.7 0-32 14.3-32 32V416c0 53 43 96 96 96H288c53 0 96-43 96-96h16c61.9 0 112-50.1 112-112s-50.1-112-112-112H352 32zm352 64h16c26.5 0 48 21.5 48 48s-21.5 48-48 48H384V256zM224 24c0-13.3-10.7-24-24-24s-24 10.7-24 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C232.5 112.3 240 119.9 240 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C231.5 47.7 224 40.1 224 24z"/></svg>
-                <div class="slogan">Enjoy your life.</div>
+                </canvas>
+              </div>
+            <div class="SwipeCoverWrapper" v-if="pageState.songList.length==0">
+              <div class="SwipeCoverItem">
+                <div class="AttentionCover">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M88 0C74.7 0 64 10.7 64 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C120.5 112.3 128 119.9 128 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C119.5 47.7 112 40.1 112 24c0-13.3-10.7-24-24-24zM32 192c-17.7 0-32 14.3-32 32V416c0 53 43 96 96 96H288c53 0 96-43 96-96h16c61.9 0 112-50.1 112-112s-50.1-112-112-112H352 32zm352 64h16c26.5 0 48 21.5 48 48s-21.5 48-48 48H384V256zM224 24c0-13.3-10.7-24-24-24s-24 10.7-24 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C232.5 112.3 240 119.9 240 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C231.5 47.7 224 40.1 224 24z"/></svg>
+                  <div class="slogan">Enjoy your life.</div>
+                </div>
               </div>
             </div>
           </div>
+          
         </div>
         <div class="ControlBar">
           <div class="cb_white_cover" :class="{cbc_left:pageState.controlBarSelection==0,cbc_right:pageState.controlBarSelection==1}"></div>
-          <div class="cb_item df" @click="()=>{pageState.controlBarSelection=0;}">
+          <div class="cb_item df" @click="()=>{pageState.controlBarSelection=0;}" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
             <div class="content">
               <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg>         
             </div>
           </div>
-          <div class="cb_item df" @click="()=>{pageState.controlBarSelection=1;}">
+          <div class="cb_item df" @click="()=>{pageState.controlBarSelection=1;}" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
             <div class="content">
               <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"/></svg>
             </div>
@@ -250,9 +310,12 @@
               </div>
             </div>
           </div>
-          <div class="cb_item wb">
+          <div class="cb_item wb modify" @click="modify_the_song" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
             <div class="content">
               <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>
+            </div>
+            <div class="content small">
+              修改信息  
             </div>
           </div>
         </div>
@@ -263,20 +326,30 @@
 <script setup>
 import { reactive } from 'vue';
 import _parser, { parseV1Tag, parseV2Tag } from 'id3-parser';
-import _cursor_arrow from './assets/arrow.gif'
-import _cursor_working from './assets/working.gif'
+import _cursor_arrow from './assets/arrow.gif';
+import _cursor_working from './assets/working.gif';
+import _cursor_link from './assets/link.gif';
 const LIST_KEY="ALLImportList"
 // const mmb=require('music-metadata-browser')
 
 // TO DO LIST：
 // Music wave on CANVAS - postpone
 // lyrics displayer
+// display album √
+// able to modify music info √
+// Toast Displayer √
+// random selection √
+// setting button should allow you to delete a song
+// setting button should allow you to redownload the song
+// setting button should allow you to set list play method
+// sort function
+// support FLAC album cover singer get. - postpone
 // Music Data Save in IndexedDB √
 // More Accurate Check Same Song √
 // paused btn should check is the same song. √
 // play function should check has the same song was playing. √
 // volume&music slider √
-
+// more cursor chagne √
 const BASEMENT_START=186;
 const BASEMENT_HEIGHT=95;
 const BASEMENT_HEIGHT_COVER=505;
@@ -300,6 +373,7 @@ const pageState=reactive({
   is_swipe_cancel:false,
   is_file_drag_in:false,
   is_show_modify_window:false,
+  is_modify_mode:false,
   is_show_modify_image_importer:false,
   is_on_working:false,
   is_find_same:false,
@@ -309,6 +383,9 @@ const pageState=reactive({
   isSongPlaying:false,
   isCancelForNonMouseEvent:false,
   canvas_el:null,
+  is_show_toast:false,
+  toast_message:"Hello World",
+  toast_destoryer_id:null,
   volume:0,
   musicprogress:0,
   isMovingVolumeBar:false,
@@ -318,7 +395,13 @@ const pageState=reactive({
   _now_playing:null,
   // _audio_context:null, new AudioContext
   _cursor:_cursor_working,
+  _curosr_mode:'cursor',
   _cursor_pos:[0,0],
+  _next_play_callback(){
+    this._now_playing.currentTime=0;
+    this._now_playing.pause();
+    this.isSongPlaying=false;
+  },
   modify_song_data_bucket:{
     title:"",
     cover:"",
@@ -332,6 +415,7 @@ const pageState=reactive({
     _h_song_mime:"",
     _h_song_size:0,
     _h_song_bucket_id:"",
+    modify_index:-1,
   },
   is_show_cursor:true,
 });
@@ -341,6 +425,33 @@ if(_t_v==null){
   localStorage.setItem("volume",DEFAULT_VOLUME*100);
 }else{
   pageState.volume=parseInt(_t_v);
+}
+const popUpDownload=(url,filename)=>{
+  const fileLink = document.createElement('a');
+  fileLink.href = url;
+  fileLink.setAttribute('download',filename);
+  document.body.appendChild(fileLink);
+  fileLink.click();
+}
+const deleteSong=(index)=>{
+  // using DELETE caused '[null]' which lead to an error;fix it tomorrow;
+  if(typeof pageState.songList[index]!='undefined'){
+    const _t_bid=pageState.songList[index].bucket_id;
+    _DB.DBStorage_removeItem(_t_bid);
+    const _t_l=localStorage.getItem(LIST_KEY);
+    delete pageState.songList[index];
+    if(_t_l!=null){
+      let _t_arr=JSON.parse(_t_l);
+      delete _t_arr[_t_arr.indexOf(_t_bid)];
+      localStorage.setItem(LIST_KEY,JSON.stringify(_t_arr));
+    }else{
+      const _t_arr=[];
+      for(let __i__ of pageState.songList){
+        _t_arr.push(__i__.bucket_id);
+      }
+      localStorage.setItem(LIST_KEY,JSON.stringify(_t_arr));
+    }
+  }
 }
 const slider_event_handler={
   volume_bar_el:null,
@@ -407,34 +518,73 @@ const dragDestoryer=()=>{
   pageState.is_file_drag_in=false;
   pageState.is_show_modify_image_importer=false;
 }
-
-// async function loadArrowAssets(imageUrl) {
-//     return new Promise((resolve, reject) => {
-//       let canvas = document.createElement('canvas')
-//       const ctx = canvas.getContext('2d')
-//       let img = new Image()
-//       img.crossOrigin = 'Anonymous'
-//       img.src = imageUrl
-//       img.onload = function() {
-//         canvas.height = img.height
-//         canvas.width = img.width
-//         ctx.drawImage(img, 0, 0)
-//         const dataURL = canvas.toDataURL('image/gif', 1)
-//         resolve(dataURL)
-//         canvas = null
-//         img = null
-//       }
-//       img.onerror = function() {
-//         reject(new Error('Could not load image at ' + imageUrl))
-//       }
-//     })
-// }
+const modify_the_song=()=>{
+  pageState.is_modify_mode=true;
+  const _t_Index=pageState.now_index;
+  const _t_Bucket_id=pageState.songList[_t_Index]['bucket_id'];
+  console.log(pageState.songList[_t_Index]);
+  _DB.DBStorage_getItem(_t_Bucket_id,(_v)=>{
+    pageState.modify_song_data_bucket=_v;
+    pageState.modify_song_data_bucket["cover"]=pageState.songList[_t_Index]["cover"]
+    pageState.modify_song_data_bucket["_h_src"]=pageState.songList[_t_Index]["src"]
+    pageState.modify_song_data_bucket["modify_index"]=_t_Index;
+    pageState.is_show_modify_window=true;
+    pageState.is_find_same=true;
+  })
+}
+const show_Toast=(msg,duration)=>{
+  pageState.toast_message=msg;
+  pageState.is_show_toast=true;
+  if(pageState.toast_destoryer_id!=null){
+    clearTimeout(pageState.toast_destoryer_id);
+  }
+  pageState.toast_destoryer_id=setTimeout(()=>{
+    pageState.is_show_toast=false;
+    pageState.toast_destoryer_id=null;
+  },duration)
+}
+const select_an_random_song=()=>{
+  song_pause();
+  const _t_length=pageState.songList.length;
+  if(_t_length<1){
+    show_Toast("请先导入歌曲!",2000);
+  }else if(_t_length==1){
+    if(pageState._now_playing!=null){
+      pageState._now_playing.currentTime=0;
+      pageState.isSongPlaying=true;
+      pageState._now_playing.play();
+    }else{
+      goByIndex(0);
+      song_play();
+    }
+    show_Toast(pageState.songList[pageState.now_index]["title"],2000);
+  }else{
+    const _t_rnd=Math.round(Math.random()*(_t_length-1));
+    goByIndex(_t_rnd);
+    song_play();
+    show_Toast(pageState.songList[pageState.now_index]["title"],2000);
+  }
+}
+const _general_function_btn_mousein_handle=()=>{
+  if(pageState._curosr_mode=='cursor'){
+    pageState._cursor=_cursor_link;
+    pageState._curosr_mode='link';
+  }
+}
+const _general_function_btn_mouseout_handle=()=>{
+  if(pageState._curosr_mode=='link'){
+    pageState._cursor=_cursor_arrow;
+    pageState._curosr_mode='cursor';
+  }
+}
 const songDataResolver_init=(data)=>{
   //title singer album cover src
   const _t_result={}
   _t_result["title"]=data["title"];
   _t_result["singer"]=data["singer"];
   _t_result["album"]=data["album"];
+  _t_result["bucket_id"]=data["_h_song_bucket_id"];
+  _t_result["filename"]=data["_h_filename"];
   _t_result["cover"]=URL.createObjectURL(new Blob([data["_h_cover_u8a"]],{type: data["_h_cover_mime"]}))
   _t_result["src"]=URL.createObjectURL(new Blob([data["_h_song_u8a"]],{type: data["_h_song_mime"]}))
   return _t_result;
@@ -516,6 +666,7 @@ const commonBeforeClosePW=()=>{
   pageState.is_show_modify_window=false;
   pageState.is_on_working=false;
   pageState.is_find_same=false;
+  pageState.is_modify_mode=false;
 }
 const set_volume=(val)=>{
   if(pageState._now_playing!=null){
@@ -537,7 +688,6 @@ const song_play=()=>{
   if(pageState._now_playing==null){
     const _t_cs=pageState.songList[pageState.now_index];
     const audio=new Audio(_t_cs.src);
-    
     // console.log(audio.volume);
     audio.volume=pageState.volume/100;
     pageState._now_playing=audio;
@@ -551,8 +701,7 @@ const song_play=()=>{
   pageState._now_playing.play();
   if(pageState._now_playing.onended==null){
     pageState._now_playing.onended=()=>{
-      pageState._now_playing.currentTime=0;
-      song_pause();
+      pageState._next_play_callback();
     }
   }
   if(pageState._now_playing.ontimeupdate==null){
@@ -589,41 +738,58 @@ const closePW=()=>{
 }
 const saveData=()=>{
   pageState.is_on_working=true;
-  pageState.songList.push({
-    title:pageState.modify_song_data_bucket.title,
-    cover:pageState.modify_song_data_bucket.cover,
-    album:pageState.modify_song_data_bucket.album,
-    singer:pageState.modify_song_data_bucket.singer,
-    src:pageState.modify_song_data_bucket._h_src
-  });
-  const _t_l=localStorage.getItem(LIST_KEY)
-  if(_t_l!=null){
-    if(_t_l.indexOf(pageState.modify_song_data_bucket._h_song_bucket_id)!=-1){
-      pageState.modify_song_data_bucket._h_song_bucket_id+=`_${new Date().getTime()}`;
+ 
+  if(!pageState.is_modify_mode){
+    pageState.songList.push({
+      title:pageState.modify_song_data_bucket.title,
+      cover:pageState.modify_song_data_bucket.cover,
+      album:pageState.modify_song_data_bucket.album,
+      singer:pageState.modify_song_data_bucket.singer,
+      src:pageState.modify_song_data_bucket._h_src
+    });
+    const _t_l=localStorage.getItem(LIST_KEY)
+    if(_t_l!=null){
+      if(_t_l.indexOf(pageState.modify_song_data_bucket._h_song_bucket_id)!=-1){
+        pageState.modify_song_data_bucket._h_song_bucket_id+=`_${new Date().getTime()}`;
+      }
     }
+    let _t_l_a=JSON.parse(_t_l);
+    _t_l_a.push(pageState.modify_song_data_bucket._h_song_bucket_id);
+    localStorage.setItem(LIST_KEY,JSON.stringify(_t_l_a));
+    _DB.DBStorage_setItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
+      title:pageState.modify_song_data_bucket.title,
+      singer:pageState.modify_song_data_bucket.singer,
+      album:pageState.modify_song_data_bucket.album,
+      _h_filename:pageState.modify_song_data_bucket._h_filename,
+      _h_cover_u8a:pageState.modify_song_data_bucket._h_cover_u8a,
+      _h_cover_mime:pageState.modify_song_data_bucket._h_cover_mime,
+      _h_song_u8a:pageState.modify_song_data_bucket._h_song_u8a,
+      _h_song_mime:pageState.modify_song_data_bucket._h_song_mime,
+      _h_song_size:pageState.modify_song_data_bucket._h_song_size,
+      _h_song_bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id
+    });
+  }else{
+    pageState.songList[pageState.modify_song_data_bucket.modify_index]={
+      title:pageState.modify_song_data_bucket.title,
+      cover:pageState.modify_song_data_bucket.cover,
+      album:pageState.modify_song_data_bucket.album,
+      singer:pageState.modify_song_data_bucket.singer,
+      src:pageState.modify_song_data_bucket._h_src
+    }
+    _DB.DBStorage_updateItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
+      title:pageState.modify_song_data_bucket.title,
+      singer:pageState.modify_song_data_bucket.singer,
+      album:pageState.modify_song_data_bucket.album,
+      _h_filename:pageState.modify_song_data_bucket._h_filename,
+      _h_cover_u8a:pageState.modify_song_data_bucket._h_cover_u8a,
+      _h_cover_mime:pageState.modify_song_data_bucket._h_cover_mime,
+      _h_song_u8a:pageState.modify_song_data_bucket._h_song_u8a,
+      _h_song_mime:pageState.modify_song_data_bucket._h_song_mime,
+      _h_song_size:pageState.modify_song_data_bucket._h_song_size,
+      _h_song_bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id
+    })
   }
-  let _t_l_a=JSON.parse(_t_l);
-  _t_l_a.push(pageState.modify_song_data_bucket._h_song_bucket_id);
-  localStorage.setItem(LIST_KEY,JSON.stringify(_t_l_a));
-  // _h_src cover _h_song_bucket_id
-  // const cachedSize=JSON.stringify(pageState.modify_song_data_bucket).length;
-  // let _total_cost=localStorage.getItem("cachedTotal");
-  // if(_total_cost==null){
-  //   localStorage.setItem("cachedTotal",cachedSize);
-  // }else{
-  //   localStorage.setItem("cachedTotal",parseInt(_total_cost)+cachedSize);
-  // }
-  _DB.DBStorage_setItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
-    title:pageState.modify_song_data_bucket.title,
-    singer:pageState.modify_song_data_bucket.singer,
-    album:pageState.modify_song_data_bucket.album,
-    _h_filename:pageState.modify_song_data_bucket._h_filename,
-    _h_cover_u8a:pageState.modify_song_data_bucket._h_cover_u8a,
-    _h_cover_mime:pageState.modify_song_data_bucket._h_cover_mime,
-    _h_song_u8a:pageState.modify_song_data_bucket._h_song_u8a,
-    _h_song_mime:pageState.modify_song_data_bucket._h_song_mime,
-    _h_song_size:pageState.modify_song_data_bucket._h_song_size,
-  });
+  
   closePW();
 }
 const MouseMovementHandler=(e)=>{
@@ -706,7 +872,8 @@ const fileImportHandler=(e)=>{
     const _t_blob=new Blob([ia], {type: mime});
     const _t_URL=URL.createObjectURL(_t_blob);
     const _t_parser_r=_parser(ia)|| parseV1Tag(ia) || parseV2Tag(ia) ||{};
-
+    // console.log(mmb.fetchFromUrl(_t_URL));
+    
     if(typeof _t_parser_r["image"]=="undefined"){
       _t_parser_r["image"]={"data":[],"mime":""};
     }
@@ -1251,6 +1418,50 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   min-width: 1030px;
   min-height: 630px;
   overflow: hidden;
+  position: relative;
+  .ToastMessageWrapper{
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    pointer-events: none;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 36;
+    .ToastMessage{
+      user-select: none;
+      transform: $generalAngle;
+      text-align: center;
+      background-color: $generalDarkenCover;
+      color:$generalWhite;
+      padding: 6px;
+      padding-left: 32px;
+      padding-right: 32px;
+      border-left: 5px solid $generalWhite;
+      border-right: 5px solid $generalWhite;
+      box-sizing: border-box;
+      width: 10px;
+      overflow: hidden;
+      transition: opacity 0.6s,width 1.6s;
+      .content{
+        font-size: 22px;
+        transform: $generalContentAngle;
+        text-overflow: ellipsis;
+        word-break: keep-all;
+        white-space: nowrap;
+      }
+      
+    }
+    .ToastMessage.display{
+        width: 100%;
+        opacity: 1;
+    }
+    .ToastMessage.disappear{
+      width: 10px;
+      opacity: 0;
+    }
+  }
   .MusicWrapper{
     height: 100%;
     width: 100%;
@@ -1593,6 +1804,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
+            position: relative;
             .setting_icon{
               display: inline-flex;
               align-items: flex-end;
@@ -1604,6 +1816,53 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               // padding-top: 5px;
               svg{
                 fill: $generalWhite;
+              }
+            }
+            .setting_window{
+              width: 356px;
+              position: absolute;
+              display: flex;
+              flex-direction: column;
+              right: -24px;
+              transform: $generalAngle translateX(100%);
+              align-items: center;
+              // box-shadow: -12px 6px 0px $generalWhite;
+              background-color: $generalWhite;
+              top: 8px;
+              .setting_item{
+                margin-top: 8px;
+                padding-left: 12px;
+                padding-right: 12px;
+                background-color: $generalDarkenCover;
+                height: 48px;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                .title{
+                  font-size: 20px;
+                  color: $generalWhite;
+                  transform: $generalContentAngle;
+                }
+                .functionWrapper{
+                  flex: 1;
+                  width: 0px;
+                  text-align: right;
+                  .setting_icon_set{
+                    transform: $generalContentAngle;
+                    font-size: 24px;
+                    height: 24px;
+                    fill: $generalWhite;
+                    color: $generalWhite;
+                  }
+                }
+              }
+              .setting_item:hover{
+                  .functionWrapper{
+                    .setting_icon_set{
+                      animation: shake 0.5s;
+                    }
+                }
+                
               }
             }
           }
@@ -1781,17 +2040,57 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
       padding-left: 64px;
       box-sizing: border-box;
       display: flex;
+      user-select: none;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       min-width: 675px;
       width: 55%;
       max-width: 875px;
+      .CoverDisplayer:hover{
+        .album_display{
+          width: 196px;
+          padding-right: 52px;
+          opacity: 1;
+        }
+        
+        
+      }
       .CoverDisplayer{
         height: 505px;
         width: 100%;
-        overflow: hidden;
         position: relative;
+        .CoverDisplayerWrapper{
+          height: 100%;
+          width: 100%;
+          position: relative;
+          overflow: hidden;
+        }
+        .album_display{
+              // width: 240px;
+              opacity: 0;
+              transition: all 1s;
+              font-size: 20px;
+              word-break: keep-all;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              pointer-events: none;
+              background-color: $generalLessDarkenCover;
+              // padding-left: 52px;
+              // padding-right: 52px;
+              color: $generalWhite;
+              font-family: $generalFontFamily;
+              position: absolute;
+              z-index: 34;
+              text-align: center;
+              top: 16px;
+              left: -8px;
+              .content{
+                transform: $generalContentAngle;
+                margin-left: 52px;
+              }
+            }
         .SwipeItemEffectCoverWrapper{
             position: absolute;
             top: 0;
@@ -1816,9 +2115,9 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
           left: -55px;
           // transform: $generalContentAngle;
           width: 100%;
-          .SwipeCoverItem.top{
-            z-index: 34;
-          }
+          // .SwipeCoverItem.top{
+          //   z-index: 34;
+          // }
           .SwipeCoverItem{
             height: 505px;
             display: flex;
@@ -1826,6 +2125,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            
             .AttentionCover{
               font-size: 88px;
               margin-left: 88px;
@@ -1896,6 +2196,15 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             fill: $generalWhite;
             transform: $generalContentAngle;
             font-size: 32px;
+            height: 32px;
+          }
+        }
+        .cb_item.modify{
+          flex-direction: column;
+          .content.small{
+            font-size: 14px;
+            height: 16px;
+            padding-left: 4px;
           }
         }
         .cb_item.longer{
@@ -2007,6 +2316,41 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   }
   100%{
     transform: translateX(0%);
+  }
+}
+@keyframes shake{
+  0% {
+      transform: translateX(0) $generalContentAngle;
+  }
+  11% {
+      transform: translateX(-2px) $generalContentAngle;
+  }
+  21% {
+      transform: translateX(0) $generalContentAngle;
+  }
+  32% {
+      transform: translateX(2px) $generalContentAngle;
+  }
+  41% {
+      transform: translateX(0) $generalContentAngle;
+  }
+  52% {
+      transform: translateX(-2px) $generalContentAngle;
+  }
+  61% {
+      transform: translateX(0) $generalContentAngle;
+  }
+  72% {
+      transform: translateX(2px) $generalContentAngle;
+  }
+  81% {
+      transform: translateX(0) $generalContentAngle;
+  }
+  91% {
+      transform: translateX(-2px) $generalContentAngle;
+  }
+  100% {
+      transform: translateX(0px) $generalContentAngle;
   }
 }
 </style>
