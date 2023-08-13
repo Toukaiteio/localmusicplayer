@@ -83,6 +83,14 @@
                   <div class="content" v-if="!pageState.is_modify_mode">似乎在歌单中存在一首相同歌曲!</div>
                   <div class="content" v-else>你正在编辑一首已存在歌曲!</div>
                 </div>
+                <div class="pw_inputer_item info" v-if="pageState.is_find_same&&pageState.is_modify_mode">
+                  <div class="content" v-if="song_status_map[pageState.songList[pageState.now_index].bucket_id]">这首歌您共听了{{ song_status_map[pageState.songList[pageState.now_index].bucket_id] }} 次!</div>
+                  <div class="content" v-else>这首歌您还未完整听过一次!</div>
+                </div>
+                <div class="pw_inputer_item success" v-if="pageState.now_playing_index==pageState.now_index">
+                  <div class="content">您正在听这首歌!</div>
+                </div>
+
               </div>
 
               <div class="pw_right pw_item">
@@ -146,15 +154,15 @@
             </div>
             <div class="ssitem_divider"></div>
             <div class="ssitem ssr" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
-              <div class="setting_icon">
+              <div class="setting_icon" @click="()=>{pageState.is_show_setting_window=!pageState.is_show_setting_window}">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-sliders" viewBox="0 0 16 16">
                   <path fill-rule="evenodd" d="M11.5 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM9.05 3a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0V3h9.05zM4.5 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM2.05 8a2.5 2.5 0 0 1 4.9 0H16v1H6.95a2.5 2.5 0 0 1-4.9 0H0V8h2.05zm9.45 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-2.45 1a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0v-1h9.05z"/>
                 </svg>
               </div>
-              <div class="title">
+              <div class="title" @click="()=>{pageState.is_show_setting_window=!pageState.is_show_setting_window}">
                 设置
               </div>
-              <div class="setting_window" @mousedown="()=>{pageState.is_swipe_command_waiting=true;}" @touchstart="()=>{pageState.is_swipe_command_waiting=true;}" @mouseleave="pageState.is_swipe_command_waiting=false;" @mouseup="pageState.is_swipe_command_waiting=false;" @touchend="pageState.is_swipe_command_waiting=false;" @touchcancel="pageState.is_swipe_command_waiting=false;">
+              <div class="setting_window" :class="{popUp:pageState.is_show_setting_window,scrollin:!pageState.is_show_setting_window}" @mousedown="()=>{pageState.is_swipe_command_waiting=true;}" @touchstart="()=>{pageState.is_swipe_command_waiting=true;}" @mouseleave="pageState.is_swipe_command_waiting=false;" @mouseup="pageState.is_swipe_command_waiting=false;" @touchend="pageState.is_swipe_command_waiting=false;" @touchcancel="pageState.is_swipe_command_waiting=false;">
                 <div class="setting_item" v-if="(typeof pageState.songList[pageState.now_index]!='undefined')" @click="popUpDownload(pageState.songList[pageState.now_index].src,pageState.songList[pageState.now_index].filename)">
                   <div class="title">下载选中歌曲</div>
                   <div class="functionWrapper">
@@ -175,7 +183,7 @@
                   <div class="title">删除选中歌曲</div>
                   <div class="functionWrapper">
                     <div class="setting_icon_set">
-                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 464a208 208 0 1 1 0-416 208 208 0 1 1 0 416zM256 0a256 256 0 1 0 0 512A256 256 0 1 0 256 0zM376.9 294.6c4.5-4.2 7.1-10.1 7.1-16.3c0-12.3-10-22.3-22.3-22.3H304V160c0-17.7-14.3-32-32-32l-32 0c-17.7 0-32 14.3-32 32v96H150.3C138 256 128 266 128 278.3c0 6.2 2.6 12.1 7.1 16.3l107.1 99.9c3.8 3.5 8.7 5.5 13.8 5.5s10.1-2 13.8-5.5l107.1-99.9z"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg>
                     </div>
                   </div>
                 </div>
@@ -183,13 +191,27 @@
                   <div class="title">删除播放中的歌曲</div>
                   <div class="functionWrapper">
                     <div class="setting_icon_set">
-                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg>                    </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg>
+                    </div>
                   </div>
                 </div>
                 <div class="setting_item">
                   <div class="title">播放方式</div>
                   <div class="functionWrapper">
+                    <div class="switch_item">
+                      <div class="switch_arrow_left" @click="_last_play_mode();">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg>
+                      </div>
+                      <div class="switch_content_wrapper">
+                        <div class="content_switch_item" v-for="(s_item,s_index) in playModeList" :key="'sw'+s_index" :class="{switch_selected:s_index==pageState.now_play_mode_index}" :style="{left:`${(s_index-pageState.now_play_mode_index)*100}%`}">
+                          {{s_item.title}}
+                        </div>
+                      </div>
+                      <div class="switch_arrow_right" @click="_next_play_mode();">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>
+                      </div>
                     </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -325,31 +347,13 @@
 </template>
 <script setup>
 import { reactive } from 'vue';
-import _parser, { parseV1Tag, parseV2Tag } from 'id3-parser';
+import _parser from 'id3-parser';
 import _cursor_arrow from './assets/arrow.gif';
 import _cursor_working from './assets/working.gif';
 import _cursor_link from './assets/link.gif';
 const LIST_KEY="ALLImportList"
 // const mmb=require('music-metadata-browser')
 
-// TO DO LIST：
-// Music wave on CANVAS - postpone
-// lyrics displayer
-// display album √
-// able to modify music info √
-// Toast Displayer √
-// random selection √
-// setting button should allow you to delete a song
-// setting button should allow you to redownload the song
-// setting button should allow you to set list play method
-// sort function
-// support FLAC album cover singer get. - postpone
-// Music Data Save in IndexedDB √
-// More Accurate Check Same Song √
-// paused btn should check is the same song. √
-// play function should check has the same song was playing. √
-// volume&music slider √
-// more cursor chagne √
 const BASEMENT_START=186;
 const BASEMENT_HEIGHT=95;
 const BASEMENT_HEIGHT_COVER=505;
@@ -377,6 +381,7 @@ const pageState=reactive({
   is_show_modify_image_importer:false,
   is_on_working:false,
   is_find_same:false,
+  is_show_setting_window:false,
   isDBReady:false,
   isInitDone:false,
   controlBarSelection:-1,
@@ -397,11 +402,6 @@ const pageState=reactive({
   _cursor:_cursor_working,
   _curosr_mode:'cursor',
   _cursor_pos:[0,0],
-  _next_play_callback(){
-    this._now_playing.currentTime=0;
-    this._now_playing.pause();
-    this.isSongPlaying=false;
-  },
   modify_song_data_bucket:{
     title:"",
     cover:"",
@@ -418,14 +418,111 @@ const pageState=reactive({
     modify_index:-1,
   },
   is_show_cursor:true,
+  now_play_mode_index:3,
 });
-const _t_v=localStorage.getItem("volume");
-if(_t_v==null){
-  pageState.volume=DEFAULT_VOLUME*100;
-  localStorage.setItem("volume",DEFAULT_VOLUME*100);
-}else{
-  pageState.volume=parseInt(_t_v);
+let _next_play_callback=()=>{
+  pageState._now_playing.currentTime=0;
+  song_pause();
 }
+const _get_next_song_index=(index)=>{
+  if(index+1>=pageState.songList.length){
+    return -1;
+  }else{
+    return index+1;
+  }
+}
+let song_status_map={};
+const song_play_status=reactive({
+  _actual_playtime_ts:0,
+  _played_song_id:'',
+  _song_played_times:0,
+  _song_duration:0,
+});
+const playModeList=[
+  {
+    "title":"顺序播放",
+    "callBack":()=>{
+      const _t_index=_get_next_song_index(pageState.now_playing_index);
+      if(_t_index==-1){
+        pageState._now_playing.currentTime=0;
+        song_pause();
+      }else{
+        goByIndex(_t_index);
+        pageState._now_playing.src=pageState.songList[_t_index].src;
+      }
+    }
+  },{
+      "title":"列表循环",
+      "callBack":()=>{
+        const _t_index=_get_next_song_index(pageState.now_playing_index);
+        if(_t_index==-1){
+          goByIndex(0);
+          pageState._now_playing.src=pageState.songList[0].src;
+          pageState._now_playing.currentTime=0;
+          pageState._now_playing.play();
+        }else{
+          goByIndex(_t_index);
+          pageState._now_playing.src=pageState.songList[_t_index].src;
+          pageState._now_playing.currentTime=0;
+          pageState._now_playing.play();
+        }
+      }
+    },{
+      "title":"单曲循环",
+      "callBack":()=>{
+        pageState._now_playing.pause();
+        setTimeout(()=>{
+          pageState._now_playing.currentTime=0;
+          pageState._now_playing.play();
+        },100)
+      }
+    },{
+      "title":"单曲播放",
+      "callBack":()=>{
+        pageState._now_playing.currentTime=0;
+        song_pause();
+      }
+    },{
+      "title":"随机播放",
+      "callBack":()=>{
+        const _t_length=pageState.songList.length;
+        if(_t_length<1){
+          show_Toast("请先导入歌曲!",2000);
+        }else if(_t_length==1){
+          goByIndex(0);
+          pageState._now_playing.src=pageState.songList[0].src;
+          pageState._now_playing.currentTime=0;
+          pageState._now_playing.play();
+        }else{
+          const _t_rnd=Math.round(Math.random()*(_t_length-1));
+          goByIndex(_t_rnd);
+          pageState._now_playing.src=pageState.songList[_t_rnd].src;
+          pageState._now_playing.currentTime=0;
+          pageState._now_playing.play();
+        }
+      }
+    }
+  
+];
+const _next_play_mode=()=>{
+  if(pageState.now_play_mode_index+1>=playModeList.length){
+    pageState.now_play_mode_index=0;
+  }else{
+    pageState.now_play_mode_index+=1;
+  }
+  localStorage.setItem("playmode",pageState.now_play_mode_index);
+  _next_play_callback=playModeList[pageState.now_play_mode_index]["callBack"];
+}
+const _last_play_mode=()=>{
+  if(pageState.now_play_mode_index-1<0){
+    pageState.now_play_mode_index=playModeList.length-1;
+  }else{
+    pageState.now_play_mode_index-=1;
+  }
+  localStorage.setItem("playmode",pageState.now_play_mode_index);
+  _next_play_callback=playModeList[pageState.now_play_mode_index]["callBack"];
+}
+
 const popUpDownload=(url,filename)=>{
   const fileLink = document.createElement('a');
   fileLink.href = url;
@@ -437,12 +534,15 @@ const deleteSong=(index)=>{
   // using DELETE caused '[null]' which lead to an error;fix it tomorrow;
   if(typeof pageState.songList[index]!='undefined'){
     const _t_bid=pageState.songList[index].bucket_id;
+    console.log(_t_bid);
     _DB.DBStorage_removeItem(_t_bid);
     const _t_l=localStorage.getItem(LIST_KEY);
-    delete pageState.songList[index];
+    // delete pageState.songList[index];
+    pageState.songList=[...pageState.songList.slice(0,index),...pageState.songList.slice(index+1)]
     if(_t_l!=null){
       let _t_arr=JSON.parse(_t_l);
-      delete _t_arr[_t_arr.indexOf(_t_bid)];
+      let _tar_index=_t_arr.indexOf(_t_bid);
+      _t_arr=[..._t_arr.slice(0,_tar_index),..._t_arr.slice(_tar_index+1)]
       localStorage.setItem(LIST_KEY,JSON.stringify(_t_arr));
     }else{
       const _t_arr=[];
@@ -522,7 +622,7 @@ const modify_the_song=()=>{
   pageState.is_modify_mode=true;
   const _t_Index=pageState.now_index;
   const _t_Bucket_id=pageState.songList[_t_Index]['bucket_id'];
-  console.log(pageState.songList[_t_Index]);
+  // console.log(pageState.songList[_t_Index]);
   _DB.DBStorage_getItem(_t_Bucket_id,(_v)=>{
     pageState.modify_song_data_bucket=_v;
     pageState.modify_song_data_bucket["cover"]=pageState.songList[_t_Index]["cover"]
@@ -597,19 +697,53 @@ const Init_Common=()=>{
   if(_t_sl==null){
     localStorage.setItem(LIST_KEY,"[]")
   }else{
+    let _t_c=0;
     for(let __i__ of JSON.parse(_t_sl)){
       _DB.DBStorage_getItem(__i__,(_v)=>{
         const _t_sd=songDataResolver_init(_v);
         pageState.songList.push(_t_sd);
-      })
+        const _t_lp=localStorage.getItem("lastplayed");
+        if(_t_lp!=null){
+          if(_t_lp==__i__){
+            pageState.now_index==_t_c;
+          }
+        }
+      }
+      )
+      _t_c+=1;
     }
   }
-
-
-
+  const _t_pm=localStorage.getItem("playmode");
+  if(_t_pm==null){
+    localStorage.setItem("playmode",3);
+  }else{
+    pageState.now_play_mode_index=parseInt(_t_pm);
+    _next_play_callback=playModeList[parseInt(_t_pm)]["callBack"];
+  }
+  const _t_v=localStorage.getItem("volume");
+  if(_t_v==null){
+    pageState.volume=DEFAULT_VOLUME*100;
+    localStorage.setItem("volume",DEFAULT_VOLUME*100);
+  }else{
+    pageState.volume=parseInt(_t_v);
+  }
+  const _t_ss=localStorage.getItem("playstatus");
+  if(_t_ss!=null){
+    song_status_map=JSON.parse(_t_ss);
+  }
   //LoadMusicResource
   //LoadLastPlayed
   //LoadPlayerSetting
+  const _t=setInterval(()=>{
+    if(pageState.now_index!=0){
+      if(typeof pageState.songList[pageState.now_index]!='undefined'){
+        goByIndex(pageState.now_index)
+        clearInterval(_t);
+      }
+    }else{
+      clearInterval(_t);
+    }
+  },200)
   pageState.isInitDone=true;
 }
 const _DB={
@@ -688,9 +822,23 @@ const song_play=()=>{
   if(pageState._now_playing==null){
     const _t_cs=pageState.songList[pageState.now_index];
     const audio=new Audio(_t_cs.src);
+    
     // console.log(audio.volume);
     audio.volume=pageState.volume/100;
     pageState._now_playing=audio;
+    pageState._actual_playtime_ts=new Date().getTime();
+    const _t_bid=pageState.songList[pageState.now_index].bucket_id;
+    if(typeof song_status_map[_t_bid]!=undefined){
+      song_play_status._song_played_times=song_status_map[_t_bid];
+    }else{
+      song_status_map[_t_bid]=0;
+      localStorage.setItem("playstatus",JSON.stringify(song_status_map));
+      song_play_status._song_played_times=0;
+    }
+    song_play_status._played_song_id=_t_bid;
+    song_play_status._song_duration=pageState._now_playing.duration;
+    localStorage.setItem("lastplayed",_t_bid);
+    
   }else if(pageState.songList[pageState.now_index].src!=pageState._now_playing.currentSrc){
     const _t_cs=pageState.songList[pageState.now_index];
     pageState._now_playing.pause();
@@ -701,7 +849,15 @@ const song_play=()=>{
   pageState._now_playing.play();
   if(pageState._now_playing.onended==null){
     pageState._now_playing.onended=()=>{
-      pageState._next_play_callback();
+      const _t_min=Math.ceil(song_play_status._song_duration/0.8);
+      const _t_now=new Date().getTime();
+      if(_t_now-song_play_status._actual_playtime_ts>_t_min*1000){
+        song_play_status._song_played_times+=1;
+        song_play_status._actual_playtime_ts=_t_now;
+        song_status_map[song_play_status._played_song_id]+=1;
+        localStorage.setItem("playstatus",JSON.stringify(song_status_map));
+      }
+      _next_play_callback();
     }
   }
   if(pageState._now_playing.ontimeupdate==null){
@@ -714,6 +870,24 @@ const song_play=()=>{
   pageState.isSongPlaying=true;
   pageState.isSameSong=true;
   pageState.now_playing_index=pageState.now_index;
+  if(pageState._now_playing.onloadedmetadata==null){
+    
+    pageState._now_playing.onloadedmetadata=()=>{
+      pageState._actual_playtime_ts=new Date().getTime();
+      const _t_bid=pageState.songList[pageState.now_playing_index].bucket_id;
+      if(typeof song_status_map[_t_bid]!='undefined'){
+        song_play_status._song_played_times=song_status_map[_t_bid];
+      }else{
+        song_status_map[_t_bid]=0;
+        localStorage.setItem("playstatus",JSON.stringify(song_status_map));
+        song_play_status._song_played_times=0;
+      }
+      song_play_status._played_song_id=_t_bid;
+      song_play_status._song_duration=pageState._now_playing.duration;
+      localStorage.setItem("lastplayed",_t_bid);
+    }
+    
+  }
 }
 const song_pause=()=>{
   if(pageState._now_playing!=null){
@@ -745,7 +919,8 @@ const saveData=()=>{
       cover:pageState.modify_song_data_bucket.cover,
       album:pageState.modify_song_data_bucket.album,
       singer:pageState.modify_song_data_bucket.singer,
-      src:pageState.modify_song_data_bucket._h_src
+      src:pageState.modify_song_data_bucket._h_src,
+      bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id,
     });
     const _t_l=localStorage.getItem(LIST_KEY)
     if(_t_l!=null){
@@ -871,9 +1046,9 @@ const fileImportHandler=(e)=>{
     }
     const _t_blob=new Blob([ia], {type: mime});
     const _t_URL=URL.createObjectURL(_t_blob);
-    const _t_parser_r=_parser(ia)|| parseV1Tag(ia) || parseV2Tag(ia) ||{};
+    const _t_parser_r= _parser(ia) || {};
     // console.log(mmb.fetchFromUrl(_t_URL));
-    
+    console.log(_t_parser_r);
     if(typeof _t_parser_r["image"]=="undefined"){
       _t_parser_r["image"]={"data":[],"mime":""};
     }
@@ -994,6 +1169,7 @@ const fileImportHandler=(e)=>{
 const goByIndex=(index)=>{
   if(index!=pageState.now_index){
     pageState.isSameSong=false;
+    pageState.now_index=index;
   }
   if(pageState.move_up_event_id!=-1){
     clearInterval(pageState.move_up_event_id);
@@ -1022,7 +1198,6 @@ const goByIndex=(index)=>{
             
           }
       }else{
-        pageState.now_index=index;
         let _t=pageState.move_up_event_id;
         pageState.move_up_event_id=-1;
         pageState.last_direction=-1
@@ -1049,7 +1224,6 @@ const goByIndex=(index)=>{
             
           }
       }else{
-        pageState.now_index=index;
         let _t=pageState.move_up_event_id;
         pageState.move_up_event_id=-1;
         pageState.last_direction=-1
@@ -1294,6 +1468,7 @@ $generalCover:#0000001a;
 $generalLessDarkenCover:#00000058;
 $generalDarkenCover:#000000a9;
 $generalAlertRed:rgba(249, 88, 88, 0.566);
+$generalSucessGreen:rgba(88, 249, 88, 0.566);
 $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 .MousePointerWrapper{
   position: absolute;
@@ -1592,6 +1767,37 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
               .pw_inputer_item.alert:hover{
                 background-color: $generalAlertRed;
               }
+              .pw_inputer_item.info{
+                background-color: $generalTranparentWhite;
+                color: $generalDark;
+                line-height: 45px;
+                vertical-align: middle;
+                .content{
+                  transform: $generalContentAngle;
+                  font-size: 18px;
+                  width: 100%;
+                  text-align: center;
+                }
+              }
+              .pw_inputer_item.info:hover{
+                background-color: $generalTranparentWhite;
+              }
+              .pw_inputer_item.success{
+                background-color: $generalSucessGreen;
+                color: $generalDark;
+                line-height: 45px;
+                vertical-align: middle;
+                .content{
+                  transform: $generalContentAngle;
+                  font-size: 18px;
+                  width: 100%;
+                  text-align: center;
+                }
+              }
+              .pw_inputer_item.success:hover{
+                background-color: $generalSucessGreen;
+              }
+              
             }
             .pw_right{
               padding: 8px;
@@ -1818,14 +2024,29 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
                 fill: $generalWhite;
               }
             }
+            .setting_window.scrollin{
+              pointer-events: none;
+              width: 0px;
+              height: 0px;
+              opacity: 0;
+              .setting_item{
+                width: 0px;
+                height: 0px;
+              }
+            }
             .setting_window{
+              word-break: keep-all;
+              white-space: nowrap;
+              text-overflow: ellipsis;
               width: 356px;
               position: absolute;
               display: flex;
+              transition: all 0.6s;
               flex-direction: column;
               right: -24px;
               transform: $generalAngle translateX(100%);
               align-items: center;
+              padding-bottom: 8px;
               // box-shadow: -12px 6px 0px $generalWhite;
               background-color: $generalWhite;
               top: 8px;
@@ -1833,6 +2054,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
                 margin-top: 8px;
                 padding-left: 12px;
                 padding-right: 12px;
+                transition: all 0.6s;
                 background-color: $generalDarkenCover;
                 height: 48px;
                 width: 100%;
@@ -1846,7 +2068,54 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
                 .functionWrapper{
                   flex: 1;
                   width: 0px;
-                  text-align: right;
+                  height: 100%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: right;
+                  .switch_item{
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    .switch_arrow_left,.switch_arrow_right{
+                      height: 100%;
+                      width: 20%;
+                      padding-top: 3px;
+                      display: flex;
+                      align-items: center;
+                      // background-color: $generalUnactiveWhite;
+                      color: $generalWhite;
+                      fill: $generalWhite;
+                      font-size: 26px;
+                    }
+                    .switch_arrow_right{
+                      justify-content: left;
+                    }
+                    .switch_arrow_left{
+                      justify-content: right;
+                    }
+                    .switch_content_wrapper{
+                      height: 100%;
+                      width: 60%;
+                      overflow: hidden;
+                      font-size: 22px;
+                      text-align: center;
+                      position: relative;
+                      .content_switch_item{
+                        width: 100%;
+                        height: 100%;
+                        position: absolute;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: left 0.3s;
+                      }
+                      .content_switch_item.switch_selected{
+                      animation: breathe 2s ease-in-out infinite;
+                      }
+                    }
+                  }
                   .setting_icon_set{
                     transform: $generalContentAngle;
                     font-size: 24px;
@@ -2316,6 +2585,17 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   }
   100%{
     transform: translateX(0%);
+  }
+}
+@keyframes breathe {
+  0% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.2;
   }
 }
 @keyframes shake{
