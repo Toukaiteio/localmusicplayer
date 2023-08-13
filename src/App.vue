@@ -550,9 +550,21 @@ const popUpDownload=(url,filename)=>{
 const deleteSong=(index)=>{
   // using DELETE caused '[null]' which lead to an error;fix it tomorrow;
   if(typeof pageState.songList[index]!='undefined'){
+    if(pageState.now_index==index&&index>=1){
+      goByIndex(pageState.now_index-1);
+    }
     const _t_bid=pageState.songList[index].bucket_id;
     console.log(_t_bid);
-    _DB.DBStorage_removeItem(_t_bid);
+    if(LIST_KEY=="ALLImportList"){
+      _DB.DBStorage_removeItem(_t_bid);
+      const _t_ps=localStorage.getItem("playstatus");
+      if(_t_ps!=null){
+        let _t_arr=JSON.parse(_t_ps);
+        let _tar_index=_t_arr.indexOf(_t_bid);
+        _t_arr=[..._t_arr.slice(0,_tar_index),..._t_arr.slice(_tar_index+1)]
+        localStorage.setItem("playstatus".stringify(_t_arr));
+      }
+    }
     const _t_l=localStorage.getItem(LIST_KEY);
     // delete pageState.songList[index];
     pageState.songList=[...pageState.songList.slice(0,index),...pageState.songList.slice(index+1)]
