@@ -87,7 +87,7 @@
                   <div class="content" v-if="song_status_map[pageState.songList[pageState.now_index].bucket_id]">这首歌您共听了{{ song_status_map[pageState.songList[pageState.now_index].bucket_id] }} 次!</div>
                   <div class="content" v-else>这首歌您还未完整听过一次!</div>
                 </div>
-                <div class="pw_inputer_item success" v-if="pageState.now_playing_index==pageState.now_index">
+                <div class="pw_inputer_item success" v-if="pageState.now_playing_index==pageState.now_index&&pageState.is_modify_mode">
                   <div class="content">您正在听这首歌!</div>
                 </div>
 
@@ -849,7 +849,7 @@ function _function_painter(){
     for (let __i in canvas_animation._wave_points) {
         const value = canvas_animation._wave_points[__i] / 5;
         let posX=(__i)*2;
-        posX-=5;
+        posX-=10;
         canvas_animation._ctx.beginPath();
         canvas_animation._ctx.lineWidth = 1;
         canvas_animation._ctx.strokeStyle = '#fffeff4f'
