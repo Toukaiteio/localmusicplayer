@@ -714,7 +714,11 @@ const songDataResolver_init=(data)=>{
   _t_result["album"]=data["album"];
   _t_result["bucket_id"]=data["_h_song_bucket_id"];
   _t_result["filename"]=data["_h_filename"];
-  _t_result["cover"]=URL.createObjectURL(new Blob([data["_h_cover_u8a"]],{type: data["_h_cover_mime"]}))
+  let _t_cover='';
+  if(data["_h_cover_u8a"].length!=0){
+    _t_cover=URL.createObjectURL(new Blob([data["_h_cover_u8a"]],{type: data["_h_cover_mime"]}))
+  }
+  _t_result["cover"]=_t_cover;
   _t_result["src"]=URL.createObjectURL(new Blob([data["_h_song_u8a"]],{type: data["_h_song_mime"]}))
   return _t_result;
 }
@@ -1275,22 +1279,24 @@ const goByIndex=(index)=>{
   if(_target<pageState.list_top){
     pageState.last_direction=1;
     pageState.move_up_event_id=setInterval(()=>{
-      if(pageState.list_top>_target){
-        if(pageState.list_top-_target>5){
+      if(pageState.list_top>_target || pageState.cover_top>_target_cover){
+        if(pageState.list_top-_target>5 && pageState.list_top!=_target){
           pageState.list_top-=2;
         }else{
           pageState.list_top-=1;
         }
-        if(Math.abs(pageState.cover_top-_target_cover)<8){
-            pageState.cover_top=_target_cover
-          }else{
-            if(Math.abs(pageState.cover_top-_target_cover)>25){
-              pageState.cover_top-=20;
+        if(pageState.cover_top!=_target_cover){
+          if(Math.abs(pageState.cover_top-_target_cover)<8){
+              pageState.cover_top=_target_cover
             }else{
-              pageState.cover_top-=5;
+              if(Math.abs(pageState.cover_top-_target_cover)>25){
+                pageState.cover_top-=20;
+              }else{
+                pageState.cover_top-=5;
+              }
+              
             }
-            
-          }
+        }
       }else{
         let _t=pageState.move_up_event_id;
         pageState.move_up_event_id=-1;
@@ -1301,22 +1307,23 @@ const goByIndex=(index)=>{
   }else{
     pageState.last_direction=0;
     pageState.move_up_event_id=setInterval(()=>{
-      if(pageState.list_top<_target){
-        if(_target-pageState.list_top>5){
+      if(pageState.list_top<_target || pageState.cover_top<_target_cover){
+        if(_target-pageState.list_top>5 && pageState.list_top!=_target){
           pageState.list_top+=2;
         }else{
           pageState.list_top+=1;
         }
-      if(Math.abs(pageState.cover_top-_target_cover)<8){
-            pageState.cover_top=_target_cover
-          }else{
-            if(Math.abs(pageState.cover_top-_target_cover)>25){
-              pageState.cover_top+=20;
+        if(pageState.cover_top!=_target_cover){
+            if(Math.abs(pageState.cover_top-_target_cover)<8){
+              pageState.cover_top=_target_cover
             }else{
-              pageState.cover_top+=5;
-            }
-            
-          }
+              if(Math.abs(pageState.cover_top-_target_cover)>25){
+                pageState.cover_top+=20;
+              }else{
+                pageState.cover_top+=5;
+              }
+              
+            }}
       }else{
         let _t=pageState.move_up_event_id;
         pageState.move_up_event_id=-1;
@@ -1353,7 +1360,7 @@ const MouseScrollHandler=(e)=>{
           if(Math.abs(pageState.cover_top-_target_cover)<8){
             pageState.cover_top=_target_cover
           }else{
-            pageState.cover_top-=5;
+            pageState.cover_top-=6;
           }
         }else{
           pageState.now_index+=1;
@@ -1362,6 +1369,7 @@ const MouseScrollHandler=(e)=>{
           pageState.last_direction=-1;
           pageState.is_swipe_end=true;
           clearInterval(_t);
+          goByIndex(pageState.now_index);
         }
       },2)
     }
@@ -1382,13 +1390,14 @@ const MouseScrollHandler=(e)=>{
         if(pageState.now_index==0){
           return;
         }
+        pageState.last_direction=0;
         pageState.move_up_event_id=setInterval(()=>{
           if(pageState.list_top<_target){
             pageState.list_top+=1;
             if(Math.abs(pageState.cover_top-_target_cover)<8){
               pageState.cover_top=_target_cover
             }else{
-              pageState.cover_top+=5;
+              pageState.cover_top+=6;
             }
           }else{
             pageState.now_index-=1;
@@ -1397,6 +1406,7 @@ const MouseScrollHandler=(e)=>{
             pageState.last_direction=-1
             pageState.is_swipe_end=true;
             clearInterval(_t);
+            goByIndex(pageState.now_index);
           }
         },5)
       }
