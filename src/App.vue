@@ -2412,7 +2412,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
       max-width: 875px;
       .CoverDisplayer:hover{
         .album_display{
-          width: 196px;
+          // width: 196px;
           padding-right: 52px;
           opacity: 1;
         }
