@@ -354,6 +354,7 @@ import _cursor_link from './assets/link.gif';
 const LIST_KEY="ALLImportList"
 // const mmb=require('music-metadata-browser')
 
+
 const BASEMENT_START=186;
 const BASEMENT_HEIGHT=95;
 const BASEMENT_HEIGHT_COVER=505;
@@ -387,7 +388,6 @@ const pageState=reactive({
   controlBarSelection:-1,
   isSongPlaying:false,
   isCancelForNonMouseEvent:false,
-  canvas_el:null,
   is_show_toast:false,
   toast_message:"Hello World",
   toast_destoryer_id:null,
@@ -395,10 +395,8 @@ const pageState=reactive({
   musicprogress:0,
   isMovingVolumeBar:false,
   isAllowChangeMusicProgress:true,
-  _ctx:null,
   isSameSong:true,
   _now_playing:null,
-  // _audio_context:null, new AudioContext
   _cursor:_cursor_working,
   _curosr_mode:'cursor',
   _cursor_pos:[0,0],
@@ -407,6 +405,8 @@ const pageState=reactive({
     cover:"",
     singer:"",
     album:"",
+    _h_has_lyrics:false,
+    _h_lyrics:[],
     _h_src:"",
     _h_filename:"",
     _h_cover_u8a:[],
@@ -438,6 +438,7 @@ const song_play_status=reactive({
   _song_played_times:0,
   _song_duration:0,
 });
+
 const playModeList=[
   {
     "title":"顺序播放",
@@ -814,17 +815,62 @@ const audio_seek=(percent)=>{
     // console.log(pageState._now_playing.duration*(percent/100),(percent/100),pageState._now_playing.duration,pageState._now_playing.currentTime)
   }
 }
+const canvas_animation=reactive({
+  canvas_el:null,
+  _ctx:null,
+  _audio_context:null,// new AudioContext
+  _audio_source:null,
+  _audio_analyser:null,
+  _wave_points:new Uint8Array(248),
+  _wave_data_points:null,
+  
+});
+function _function_painter(){
+  canvas_animation._audio_analyser.getByteFrequencyData(canvas_animation._wave_points);
+    const _canvas_width=parseInt(getComputedStyle(canvas_animation.canvas_el).width);
+    const _canvas_height=parseInt(getComputedStyle(canvas_animation.canvas_el).height);
+    canvas_animation._ctx.clearRect(0, 0, _canvas_width, _canvas_height);
+    for (let __i in canvas_animation._wave_points) {
+        const value = canvas_animation._wave_points[__i] / 5;
+        let posX=(__i)*2;
+        posX-=5;
+        canvas_animation._ctx.beginPath();
+        canvas_animation._ctx.lineWidth = 1;
+        canvas_animation._ctx.strokeStyle = '#fffeff4f'
+        canvas_animation._ctx.moveTo(posX,_canvas_height-300);
+        //length= value+56
+        canvas_animation._ctx.lineTo(posX+(value+56)*Math.sin(9),(_canvas_height-300)+(value+56)*Math.cos(9));
+        // console.log(_canvas_height-value-56-100);
+        canvas_animation._ctx.stroke();
+    }
+    canvas_animation._audio_analyser.getByteTimeDomainData(canvas_animation._wave_data_points);
+    const height = 100, width = 400;
+    canvas_animation._ctx.beginPath();
+    for (let __i__ = 0; __i__ < width; __i__++) {
+      canvas_animation._ctx.lineTo(__i__ + 100, 300 - (height / 2 * (canvas_animation._wave_data_points[canvas_animation._wave_data_points.length * __i__ / width | 0] / 256 - 0.5)));
+    }
+    canvas_animation._ctx.stroke();
+    requestAnimationFrame(_function_painter);
+  }
 const song_play=()=>{
-  if(pageState.canvas_el==null){
-    pageState.canvas_el=document.getElementById("s_canvas_el");
-    pageState._ctx=pageState.canvas_el.getContext("2d");
+  if(canvas_animation.canvas_el==null){
+    canvas_animation.canvas_el=document.getElementById("s_canvas_el");
+    canvas_animation._ctx=canvas_animation.canvas_el.getContext("2d");
   }
   if(pageState._now_playing==null){
     const _t_cs=pageState.songList[pageState.now_index];
     const audio=new Audio(_t_cs.src);
-    
+    canvas_animation._audio_context=new AudioContext;
+    canvas_animation._audio_source=canvas_animation._audio_context.createMediaElementSource(audio);
+    canvas_animation._audio_analyser=canvas_animation._audio_context.createAnalyser();
+    canvas_animation._audio_source.connect(canvas_animation._audio_analyser);
+    canvas_animation._audio_analyser.connect(canvas_animation._audio_context.destination);
+    const _t_count=canvas_animation._audio_analyser.frequencyBinCount * 44100 / canvas_animation._audio_context.sampleRate | 0;
+    canvas_animation._wave_data_points=new Uint8Array(_t_count);
+    _function_painter();
     // console.log(audio.volume);
     audio.volume=pageState.volume/100;
+
     pageState._now_playing=audio;
     pageState._actual_playtime_ts=new Date().getTime();
     const _t_bid=pageState.songList[pageState.now_index].bucket_id;
@@ -2370,8 +2416,9 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             align-items: center;
             justify-content: center;
             .SwipeItemEffectCover{
-              height: 125%;
+              height: 100%;
               width: 125%;
+              z-index:40;
               transform: $generalContentAngle;
               background-color: transparent;
             }
