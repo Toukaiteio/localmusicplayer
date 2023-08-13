@@ -354,7 +354,25 @@ import _cursor_link from './assets/link.gif';
 const LIST_KEY="ALLImportList"
 // const mmb=require('music-metadata-browser')
 
-
+// TO DO LIST：
+// Music wave on CANVAS - √
+// lyrics displayer - canceled
+// display album √
+// able to modify music info √
+// Toast Displayer √
+// random selection √
+// setting button should allow you to delete a song √
+// setting button should allow you to redownload the song √
+// setting button should allow you to set list play method - √
+// sort function - postpone
+// support FLAC album cover singer get. - postpone
+// Music Data Save in IndexedDB √
+// More Accurate Check Same Song √
+// paused btn should check is the same song. √
+// play function should check has the same song was playing. √
+// remember last played - √
+// volume&music slider √
+// more cursor chagne √
 const BASEMENT_START=186;
 const BASEMENT_HEIGHT=95;
 const BASEMENT_HEIGHT_COVER=505;
@@ -405,8 +423,6 @@ const pageState=reactive({
     cover:"",
     singer:"",
     album:"",
-    _h_has_lyrics:false,
-    _h_lyrics:[],
     _h_src:"",
     _h_filename:"",
     _h_cover_u8a:[],
@@ -987,7 +1003,9 @@ const saveData=()=>{
       _h_song_u8a:pageState.modify_song_data_bucket._h_song_u8a,
       _h_song_mime:pageState.modify_song_data_bucket._h_song_mime,
       _h_song_size:pageState.modify_song_data_bucket._h_song_size,
-      _h_song_bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id
+      _h_song_bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id,
+      _h_has_lyrics:false,
+      _h_lyrics:[],
     });
   }else{
     pageState.songList[pageState.modify_song_data_bucket.modify_index]={
@@ -1007,7 +1025,9 @@ const saveData=()=>{
       _h_song_u8a:pageState.modify_song_data_bucket._h_song_u8a,
       _h_song_mime:pageState.modify_song_data_bucket._h_song_mime,
       _h_song_size:pageState.modify_song_data_bucket._h_song_size,
-      _h_song_bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id
+      _h_song_bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id,
+      _h_has_lyrics:false,
+      _h_lyrics:[],
     })
   }
   
