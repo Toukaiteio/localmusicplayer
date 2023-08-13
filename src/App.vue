@@ -425,7 +425,7 @@ const pageState=reactive({
     album:"",
     _h_src:"",
     _h_filename:"",
-    _h_cover_u8a:[],
+    _h_cover_u8a:new Uint8Array(0),
     _h_cover_mime:"",
     _h_song_u8a:[],
     _h_song_mime:"",
@@ -547,15 +547,15 @@ const popUpDownload=(url,filename)=>{
   document.body.appendChild(fileLink);
   fileLink.click();
 }
-const deleteSong=(index)=>{
+const deleteSong=(index,isOpDB=true)=>{
   // using DELETE caused '[null]' which lead to an error;fix it tomorrow;
   if(typeof pageState.songList[index]!='undefined'){
     if(pageState.now_index==index&&index>=1){
       goByIndex(pageState.now_index-1);
     }
     const _t_bid=pageState.songList[index].bucket_id;
-    console.log(_t_bid);
-    if(LIST_KEY=="ALLImportList"){
+    // console.log(_t_bid);
+    if(LIST_KEY=="ALLImportList" && isOpDB){
       _DB.DBStorage_removeItem(_t_bid);
       const _t_ps=localStorage.getItem("playstatus");
       if(_t_ps!=null){
@@ -729,6 +729,7 @@ const Init_Common=()=>{
     let _t_c=0;
     for(let __i__ of JSON.parse(_t_sl)){
       _DB.DBStorage_getItem(__i__,(_v)=>{
+        if(_v!=null){
         const _t_sd=songDataResolver_init(_v);
         pageState.songList.push(_t_sd);
         const _t_lp=localStorage.getItem("lastplayed");
@@ -737,7 +738,16 @@ const Init_Common=()=>{
             pageState.now_index==_t_c;
           }
         }
+      }else{
+        const _t_l=localStorage.getItem(LIST_KEY);
+        if(_t_l!=null){
+          let _t_arr=JSON.parse(_t_l);
+          let _tar_index=_t_arr.indexOf(__i__);
+          _t_arr=[..._t_arr.slice(0,_tar_index),..._t_arr.slice(_tar_index+1)]
+          localStorage.setItem(LIST_KEY,JSON.stringify(_t_arr));
+        }
       }
+    }
       )
       _t_c+=1;
     }
@@ -978,7 +988,7 @@ const closePW=()=>{
     album:"",
     _h_src:"",
     _h_filename:"",
-    _h_cover_u8a:[],
+    _h_cover_u8a:new Uint8Array(0),
     _h_cover_mime:"",
     _h_song_u8a:[],
     _h_song_mime:"",
@@ -1097,6 +1107,7 @@ const coverImportHandler=(e)=>{
     for (var i = 0; i < data.length; i++) {
       ia[i] = data.charCodeAt(i)
     }
+    // console.log(JSON.stringify(ia),mime)
     const _t_blob=new Blob([ia], {type: mime});
     const _t_URL=URL.createObjectURL(_t_blob);
     pageState.modify_song_data_bucket.cover=_t_URL;
@@ -1104,6 +1115,11 @@ const coverImportHandler=(e)=>{
     pageState.modify_song_data_bucket._h_cover_u8a=ia;
   }
   e.target.value='';
+}
+const get_filename=(fullname)=>{
+  const _f_arr=fullname.split('.');
+  const _t_type=_f_arr[_f_arr.length-1];
+  return fullname.slice(0,(fullname.length-1)-_t_type.length);
 }
 const fileImportHandler=(e)=>{
   
@@ -1126,13 +1142,13 @@ const fileImportHandler=(e)=>{
     const _t_URL=URL.createObjectURL(_t_blob);
     const _t_parser_r= _parser(ia) || {};
     // console.log(mmb.fetchFromUrl(_t_URL));
-    console.log(_t_parser_r);
+    // console.log(_t_parser_r);
     if(typeof _t_parser_r["image"]=="undefined"){
       _t_parser_r["image"]={"data":[],"mime":""};
     }
     
     const _t_f_obj={
-      "title":_t_parser_r["title"] || e.target.files[0].name,
+      "title":_t_parser_r["title"] || get_filename(e.target.files[0].name),
       "cover_u8a":_t_parser_r["image"]["data"] || [],
       "cover_mime":_t_parser_r["image"]["mime"] || "",
       "singer":_t_parser_r["artist"] || "",
@@ -1428,7 +1444,7 @@ const KeepSwipeWithDecreasingSpeed=(speed)=>{
       pageState.cover_top+=Math.round(speed*5.31)
       sum+=speed;
     }
-    console.log(_t_num,_t_counter,speed);
+    // console.log(_t_num,_t_counter,speed);
     _t_counter+=1;
   },5)
 }
