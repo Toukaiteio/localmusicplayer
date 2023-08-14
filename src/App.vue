@@ -251,7 +251,7 @@
               <div class="title">{{pageState.songList[pageState.now_index].title}}</div>
               <div class="singer">{{pageState.songList[pageState.now_index].singer}}</div>
             </div>
-            <div class="item_right" v-if="!pageState.isSongPlaying || !pageState.isSameSong" @click="song_play();" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
+            <div class="item_right" v-if="!pageState.isSongPlaying || (pageState.now_playing_index!=pageState.now_index)" @click="song_play();" @mouseenter="_general_function_btn_mousein_handle" @mouseleave="_general_function_btn_mouseout_handle">
               <div class="player">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
                   <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
@@ -347,7 +347,10 @@
 </template>
 <script setup>
 import { reactive } from 'vue';
-import _parser from 'id3-parser';
+import {parseBlob} from 'music-metadata-browser';
+import { KGMDecryptor } from './decrypt/kgmDecryptor';
+import { KWMDecryptor } from './decrypt/kwmDecryptor'
+import { RAWDecryptor } from './decrypt/rawDecryptor'
 import _cursor_arrow from './assets/arrow.gif';
 import _cursor_working from './assets/working.gif';
 import _cursor_link from './assets/link.gif';
@@ -361,6 +364,7 @@ const LIST_KEY="ALLImportList"
 // able to modify music info √
 // Toast Displayer √
 // random selection √
+// support kgm ncm - working
 // setting button should allow you to delete a song √
 // setting button should allow you to redownload the song √
 // setting button should allow you to set list play method - √
@@ -413,7 +417,6 @@ const pageState=reactive({
   musicprogress:0,
   isMovingVolumeBar:false,
   isAllowChangeMusicProgress:true,
-  isSameSong:true,
   _now_playing:null,
   _cursor:_cursor_working,
   _curosr_mode:'cursor',
@@ -466,6 +469,7 @@ const playModeList=[
       }else{
         goByIndex(_t_index);
         pageState._now_playing.src=pageState.songList[_t_index].src;
+        pageState.now_playing_index=_t_index;
       }
     }
   },{
@@ -477,11 +481,13 @@ const playModeList=[
           pageState._now_playing.src=pageState.songList[0].src;
           pageState._now_playing.currentTime=0;
           pageState._now_playing.play();
+          pageState.now_playing_index=0;
         }else{
           goByIndex(_t_index);
           pageState._now_playing.src=pageState.songList[_t_index].src;
           pageState._now_playing.currentTime=0;
           pageState._now_playing.play();
+          pageState.now_playing_index=_t_index;
         }
       }
     },{
@@ -510,12 +516,14 @@ const playModeList=[
           pageState._now_playing.src=pageState.songList[0].src;
           pageState._now_playing.currentTime=0;
           pageState._now_playing.play();
+          pageState.now_playing_index=0;
         }else{
           const _t_rnd=Math.round(Math.random()*(_t_length-1));
           goByIndex(_t_rnd);
           pageState._now_playing.src=pageState.songList[_t_rnd].src;
           pageState._now_playing.currentTime=0;
           pageState._now_playing.play();
+          pageState.now_playing_index=_t_rnd;
         }
       }
     }
@@ -559,10 +567,9 @@ const deleteSong=(index,isOpDB=true)=>{
       _DB.DBStorage_removeItem(_t_bid);
       const _t_ps=localStorage.getItem("playstatus");
       if(_t_ps!=null){
-        let _t_arr=JSON.parse(_t_ps);
-        let _tar_index=_t_arr.indexOf(_t_bid);
-        _t_arr=[..._t_arr.slice(0,_tar_index),..._t_arr.slice(_tar_index+1)]
-        localStorage.setItem("playstatus".stringify(_t_arr));
+        let _t_obj=JSON.parse(_t_ps);
+        delete _t_obj[_t_bid];
+        localStorage.setItem("playstatus".stringify(_t_obj));
       }
     }
     const _t_l=localStorage.getItem(LIST_KEY);
@@ -875,7 +882,7 @@ function _function_painter(){
     for (let __i in canvas_animation._wave_points) {
         const value = canvas_animation._wave_points[__i] / 5;
         let posX=(__i)*2;
-        posX-=10;
+        posX-=12;
         canvas_animation._ctx.beginPath();
         canvas_animation._ctx.lineWidth = 1;
         canvas_animation._ctx.strokeStyle = '#fffeff4f'
@@ -956,7 +963,6 @@ const song_play=()=>{
       }
   }
   pageState.isSongPlaying=true;
-  pageState.isSameSong=true;
   pageState.now_playing_index=pageState.now_index;
   if(pageState._now_playing.onloadedmetadata==null){
     
@@ -1008,6 +1014,7 @@ const saveData=()=>{
       album:pageState.modify_song_data_bucket.album,
       singer:pageState.modify_song_data_bucket.singer,
       src:pageState.modify_song_data_bucket._h_src,
+      filename:pageState.modify_song_data_bucket._h_filename,
       bucket_id:pageState.modify_song_data_bucket._h_song_bucket_id,
     });
     const _t_l=localStorage.getItem(LIST_KEY)
@@ -1039,7 +1046,8 @@ const saveData=()=>{
       cover:pageState.modify_song_data_bucket.cover,
       album:pageState.modify_song_data_bucket.album,
       singer:pageState.modify_song_data_bucket.singer,
-      src:pageState.modify_song_data_bucket._h_src
+      src:pageState.modify_song_data_bucket._h_src,
+      filename:pageState.modify_song_data_bucket._h_filename,
     }
     _DB.DBStorage_updateItem(pageState.modify_song_data_bucket._h_song_bucket_id,{
       title:pageState.modify_song_data_bucket.title,
@@ -1125,56 +1133,100 @@ const get_filename=(fullname)=>{
   const _t_type=_f_arr[_f_arr.length-1];
   return fullname.slice(0,(fullname.length-1)-_t_type.length);
 }
+const get_file_ext=(filename)=>{
+  const _t_ext=filename.split('.');
+  return _t_ext[_t_ext.length-1];
+}
+
 const fileImportHandler=(e)=>{
   
   const _tFR=new FileReader();
   _tFR.readAsBinaryString(e.target.files[0]);
-  _tFR.onload=(E)=>{
-    const data=E.target.result
-    // console.log(E);
-    const mime = e.target.files[0].type;
-    if(mime.indexOf("audio")==-1){
-      alert("Not Support!");
-      pageState.is_file_drag_in=false;
-      return;
-    }
+  _tFR.onload=async (E)=>{
+    const _ext=get_file_ext(e.target.files[0].name);
+    let data=E.target.result;
     let ia = new Uint8Array(data.length)
     for (var i = 0; i < data.length; i++) {
       ia[i] = data.charCodeAt(i)
     }
+    let mime=e.target.files[0].type;
+    let fileName=e.target.files[0].name;
+    let _t_decrypted={};
+    switch(_ext) {
+      case "kgm":
+      case "vpr":
+      case "kgma":
+        _t_decrypted=await KGMDecryptor(ia,_ext);
+        data=_t_decrypted.data;
+        mime=_t_decrypted.mime;
+        fileName=get_filename(fileName)+'.'+_t_decrypted.ext;
+      break;
+      case "kwm":
+        _t_decrypted=await KWMDecryptor(ia,_ext);
+        data=_t_decrypted.data;
+        mime=_t_decrypted.mime;
+        fileName=get_filename(fileName)+'.'+_t_decrypted.ext;
+        break;
+      case 'ogg':
+        _t_decrypted=await RAWDecryptor(ia,_ext);
+        data=_t_decrypted.data;
+        mime=_t_decrypted.mime;
+        fileName=get_filename(fileName)+'.'+_t_decrypted.ext;
+        break;
+      case 'tm0':
+      case 'tm3':
+        _t_decrypted=await RAWDecryptor(ia,'mp3');
+        data=_t_decrypted.data;
+        mime=_t_decrypted.mime;
+        fileName=get_filename(fileName)+'.'+_t_decrypted.ext;
+        break;
+      default:
+      break;
+    }
+    
+    // console.log(E);
+    
+    if(mime.indexOf("audio")==-1){
+      show_Toast("该文件不受支持!",2000);
+      pageState.is_file_drag_in=false;
+      return;
+    }
+    
     const _t_blob=new Blob([ia], {type: mime});
     const _t_URL=URL.createObjectURL(_t_blob);
-    const _t_parser_r= _parser(ia) || {};
-    // console.log(mmb.fetchFromUrl(_t_URL));
-    // console.log(_t_parser_r);
-    if(typeof _t_parser_r["image"]=="undefined"){
-      _t_parser_r["image"]={"data":[],"mime":""};
+    const _metadata=await parseBlob(_t_blob);
+    const _meta_common=_metadata.common;
+    if(typeof _meta_common["picture"]=="undefined" ){
+      _meta_common["picture"]=[{"data":[],"mime":""}];
+    }else if(!_meta_common["picture"][0].width || !_meta_common["picture"][0].height ){
+      _meta_common["picture"]=[{"data":[],"mime":""}];
     }
     
     const _t_f_obj={
-      "title":_t_parser_r["title"] || get_filename(e.target.files[0].name),
-      "cover_u8a":_t_parser_r["image"]["data"] || [],
-      "cover_mime":_t_parser_r["image"]["mime"] || "",
-      "singer":_t_parser_r["artist"] || "",
-      "album":_t_parser_r["album"] || "",
+      "title":_meta_common["title"] || get_filename(fileName),
+      "cover_u8a":_meta_common["picture"][0]["data"] || [],
+      "cover_mime":_meta_common["picture"][0]["format"] || "",
+      "singer":_meta_common["artist"] || "",
+      "album":_meta_common["album"] || "",
       "src":_t_URL,
       "song_u8a":ia,
       "song_mime":mime,
-      "filename":e.target.files[0].name,
+      "filename":fileName,
       "filesize":E.total
     }
     for(let __i__ of pageState.songList){
-      if(__i__.title.indexOf(e.target.files[0].name.split('.')[0])!=-1){
+      if(__i__.title.indexOf(fileName.split('.')[0])!=-1){
         pageState.is_find_same=true;
       }
-      if(_t_parser_r["title"]){
-        if(__i__.title.indexOf(_t_parser_r["title"])!=-1){
+      if(_meta_common["title"]){
+        if(__i__.title.indexOf(_meta_common["title"])!=-1){
           pageState.is_find_same=true;
         }
       }
     }
     e.target.value='';
     songDataResolver(_t_f_obj)
+    
     
     // console.log(_t_f_obj);
   }
@@ -1266,7 +1318,6 @@ const fileImportHandler=(e)=>{
 // }
 const goByIndex=(index)=>{
   if(index!=pageState.now_index){
-    pageState.isSameSong=false;
     pageState.now_index=index;
   }
   if(pageState.move_up_event_id!=-1){
