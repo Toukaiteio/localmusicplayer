@@ -569,7 +569,7 @@ const deleteSong=(index,isOpDB=true)=>{
       if(_t_ps!=null){
         let _t_obj=JSON.parse(_t_ps);
         delete _t_obj[_t_bid];
-        localStorage.setItem("playstatus".stringify(_t_obj));
+        localStorage.setItem("playstatus",JSON.stringify(_t_obj));
       }
     }
     const _t_l=localStorage.getItem(LIST_KEY);
@@ -1152,10 +1152,12 @@ const fileImportHandler=(e)=>{
     let mime=e.target.files[0].type;
     let fileName=e.target.files[0].name;
     let _t_decrypted={};
+    // console.log(_ext);
     switch(_ext) {
       case "kgm":
       case "vpr":
       case "kgma":
+        // console.log(_ext);
         _t_decrypted=await KGMDecryptor(ia,_ext);
         data=_t_decrypted.data;
         mime=_t_decrypted.mime;
@@ -1192,10 +1194,11 @@ const fileImportHandler=(e)=>{
       return;
     }
     
-    const _t_blob=new Blob([ia], {type: mime});
+    const _t_blob=new Blob([data], {type: mime});
     const _t_URL=URL.createObjectURL(_t_blob);
     const _metadata=await parseBlob(_t_blob);
     const _meta_common=_metadata.common;
+    // console.log(_metadata)
     if(typeof _meta_common["picture"]=="undefined" ){
       _meta_common["picture"]=[{"data":[],"mime":""}];
     }else if(!_meta_common["picture"][0].width || !_meta_common["picture"][0].height ){
