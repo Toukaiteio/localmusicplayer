@@ -10,6 +10,7 @@
   "dependencies": {
     "@jixun/kugou-crypto": "^1.0.3",
     "core-js": "^3.8.3",
+    "id3-parser": "^3.0.0",
     "music-metadata-browser": "^2.2.7",
     "register-service-worker": "^1.7.2",
     "vue": "^3.2.13",

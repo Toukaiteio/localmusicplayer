@@ -1,11 +1,15 @@
 <template>
   <!-- <div class="MouseCover"></div> -->
-  <div class="FileDealer" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler" @dragleave="dragDestoryer" v-show="pageState.is_file_drag_in&&!pageState.is_show_modify_window">
-      <input class="_f_loader" type="file" @change="fileImportHandler"/>
+  <div class="mobile_alert">
+    页面不支持竖屏显示！
+  </div>
+  <!-- v-if="!pageState.is_mobile_mode" -->
+  <div class="FileDealer"  @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler" @dragleave="dragDestoryer" v-show="pageState.is_file_drag_in&&!pageState.is_show_modify_window">
+      <input accept="audio/*,.ogg,.kgm,.vpr,.kgma,.kwm,.tm0,.tm3" class="_f_loader" id="_f_loader_input" type="file" @change="fileImportHandler"/>
       <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M128 64c0-35.3 28.7-64 64-64H352V128c0 17.7 14.3 32 32 32H512V448c0 35.3-28.7 64-64 64H192c-35.3 0-64-28.7-64-64V336H302.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H128V64zm0 224v48H24c-13.3 0-24-10.7-24-24s10.7-24 24-24H128zM512 128H384V0L512 128z"/></svg>
       <div class="Content">在此处拖入文件</div>
   </div>
-  <div class="MousePointerWrapper">
+  <div class="MousePointerWrapper" v-if="!pageState.is_mobile_mode">
     <div class="mouseItem" v-show="pageState.is_show_cursor"  :style="{left:`${pageState._cursor_pos[0]}px`,top:`${pageState._cursor_pos[1]}px`}">
       <img v-if="pageState._cursor!=''" :src="pageState._cursor">
     </div>
@@ -39,7 +43,7 @@
         </div>
       </div>
     </div>
-    <div class="MusicWrapper" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler">
+    <div class="MusicWrapper" :class="{mobile_mode:pageState.is_mobile_mode}" @mousemove="MouseMovementHandler" @mouseleave="MouseHideHandler">
       <div class="PopupWindowModifyWrapper" v-if="pageState.is_show_modify_window">
         <div class="PopupWindowModify">
           <div class="title">
@@ -117,7 +121,7 @@
           </div>
         </div>
       </div>
-      <div class="Mitem left">
+      <div class="Mitem left" v-if="!pageState.is_mobile_mode">
         <div class="top_left_item">
           <svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
@@ -163,6 +167,14 @@
                 设置
               </div>
               <div class="setting_window" :class="{popUp:pageState.is_show_setting_window,scrollin:!pageState.is_show_setting_window}" @mousedown="()=>{pageState.is_swipe_command_waiting=true;}" @touchstart="()=>{pageState.is_swipe_command_waiting=true;}" @mouseleave="pageState.is_swipe_command_waiting=false;" @mouseup="pageState.is_swipe_command_waiting=false;" @touchend="pageState.is_swipe_command_waiting=false;" @touchcancel="pageState.is_swipe_command_waiting=false;">
+                <div class="setting_item" v-if="pageState.is_mobile_mode" @click="pageState.songUpdateUploader.click();">
+                  <div class="title">导入歌曲</div>
+                  <div class="functionWrapper">
+                    <div class="setting_icon_set">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M128 64c0-35.3 28.7-64 64-64H352V128c0 17.7 14.3 32 32 32H512V448c0 35.3-28.7 64-64 64H192c-35.3 0-64-28.7-64-64V336H302.1l-39 39c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l80-80c9.4-9.4 9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l39 39H128V64zm0 224v48H24c-13.3 0-24-10.7-24-24s10.7-24 24-24H128zM512 128H384V0L512 128z"/></svg>
+                    </div>
+                  </div>
+                </div>
                 <div class="setting_item" v-if="(typeof pageState.songList[pageState.now_index]!='undefined')" @click="popUpDownload(pageState.songList[pageState.now_index].src,pageState.songList[pageState.now_index].filename)">
                   <div class="title">下载选中歌曲</div>
                   <div class="functionWrapper">
@@ -346,8 +358,9 @@
   </div>
 </template>
 <script setup>
-import { reactive } from 'vue';
-import {parseBlob} from 'music-metadata-browser';
+import { reactive,onMounted,onUnmounted } from 'vue';
+import { parseBlob } from 'music-metadata-browser';
+import mp3parser from 'id3-parser';
 import { KGMDecryptor } from './decrypt/kgmDecryptor';
 import { KWMDecryptor } from './decrypt/kwmDecryptor'
 import { RAWDecryptor } from './decrypt/rawDecryptor'
@@ -364,7 +377,7 @@ const LIST_KEY="ALLImportList"
 // able to modify music info √
 // Toast Displayer √
 // random selection √
-// support kgm ncm - working
+// support kgm ncm √
 // setting button should allow you to delete a song √
 // setting button should allow you to redownload the song √
 // setting button should allow you to set list play method - √
@@ -377,10 +390,11 @@ const LIST_KEY="ALLImportList"
 // remember last played - √
 // volume&music slider √
 // more cursor chagne √
-const BASEMENT_START=186;
-const BASEMENT_HEIGHT=95;
-const BASEMENT_HEIGHT_COVER=505;
+let BASEMENT_START=186;
+let BASEMENT_HEIGHT=95;
+let BASEMENT_HEIGHT_COVER=505;
 const DEFAULT_VOLUME=0.6;
+
 //get volume
 const pageState=reactive({
   list_top:BASEMENT_START,
@@ -417,6 +431,7 @@ const pageState=reactive({
   musicprogress:0,
   isMovingVolumeBar:false,
   isAllowChangeMusicProgress:true,
+  songUpdateUploader:null,
   _now_playing:null,
   _cursor:_cursor_working,
   _curosr_mode:'cursor',
@@ -437,8 +452,48 @@ const pageState=reactive({
     modify_index:-1,
   },
   is_show_cursor:true,
+  is_mobile_mode:false,
   now_play_mode_index:3,
 });
+const resizeHandler=(e)=>{
+  // console.log(e);
+  if(e.target.outerWidth<1500){
+    pageState.is_mobile_mode=true;
+    if(pageState.list_top==BASEMENT_START){
+      pageState.list_top=100;
+    }
+    BASEMENT_START=100;
+    BASEMENT_HEIGHT=62+12;
+    BASEMENT_HEIGHT_COVER=318;
+    goByIndex(pageState.now_index);
+  }else{
+    pageState.is_mobile_mode=false;
+    if(pageState.list_top==BASEMENT_START){
+      pageState.list_top=186;
+    }
+    BASEMENT_START=186;
+    BASEMENT_HEIGHT=95;
+    BASEMENT_HEIGHT_COVER=505;
+    goByIndex(pageState.now_index);
+    
+  }
+}
+onMounted(()=>{
+  pageState.songUpdateUploader=document.getElementById("_f_loader_input");
+  if(window.outerWidth<1500){
+    pageState.is_mobile_mode=true;
+    if(pageState.list_top==BASEMENT_START){
+      pageState.list_top=100;
+    }
+    BASEMENT_START=100;
+    BASEMENT_HEIGHT=62+12;
+    BASEMENT_HEIGHT_COVER=318;
+  }
+  window.addEventListener("resize",resizeHandler)
+})
+onUnmounted(()=>{
+  window.removeEventListener("resize",resizeHandler);
+})
 let _next_play_callback=()=>{
   pageState._now_playing.currentTime=0;
   song_pause();
@@ -560,6 +615,10 @@ const deleteSong=(index,isOpDB=true)=>{
   if(typeof pageState.songList[index]!='undefined'){
     if(pageState.now_index==index&&index>=1){
       goByIndex(pageState.now_index-1);
+      if(pageState._now_playing!=null && (typeof pageState._now_playing["src"] !='undefined')){
+        pageState._now_playing.src=pageState.songList[pageState.now_index-1].src;
+        pageState.now_play_mode_index=pageState.now_index-1;
+      }
     }
     const _t_bid=pageState.songList[index].bucket_id;
     // console.log(_t_bid);
@@ -888,7 +947,8 @@ function _function_painter(){
         canvas_animation._ctx.strokeStyle = '#fffeff4f'
         canvas_animation._ctx.moveTo(posX,_canvas_height-300);
         //length= value+56
-        canvas_animation._ctx.lineTo(posX+(value+56)*Math.sin(9),(_canvas_height-300)+(value+56)*Math.cos(9));
+        // 1= 2 * Math.Pi / 360; 15 = 
+        canvas_animation._ctx.lineTo(posX+(value+56)*Math.sin(Math.PI/12),(_canvas_height-300)-(value+56)*Math.cos(Math.PI/12));
         // console.log(_canvas_height-value-56-100);
         canvas_animation._ctx.stroke();
     }
@@ -1152,7 +1212,6 @@ const fileImportHandler=(e)=>{
     let mime=e.target.files[0].type;
     let fileName=e.target.files[0].name;
     let _t_decrypted={};
-    // console.log(_ext);
     switch(_ext) {
       case "kgm":
       case "vpr":
@@ -1183,12 +1242,12 @@ const fileImportHandler=(e)=>{
         fileName=get_filename(fileName)+'.'+_t_decrypted.ext;
         break;
       default:
+        data=ia;
       break;
     }
-    
     // console.log(E);
     
-    if(mime.indexOf("audio")==-1){
+    if(mime.indexOf("audio")==-1 || data==-1 || data==-2 || data==-3){
       show_Toast("该文件不受支持!",2000);
       pageState.is_file_drag_in=false;
       return;
@@ -1197,18 +1256,30 @@ const fileImportHandler=(e)=>{
     const _t_blob=new Blob([data], {type: mime});
     const _t_URL=URL.createObjectURL(_t_blob);
     const _metadata=await parseBlob(_t_blob);
+    const _parser_mp3=mp3parser(data);
     const _meta_common=_metadata.common;
-    // console.log(_metadata)
+    // console.log(_parser_mp3);
+    if(_parser_mp3){
+      if(_parser_mp3["image"]){
+      _meta_common["picture"]={
+        "data":_parser_mp3["image"]["data"],
+        "mime":_parser_mp3["image"]["mime"],
+      }}
+      _meta_common["album"]=_parser_mp3["album"] || _meta_common["album"]
+      _meta_common["artist"]=_parser_mp3["artist"] || _meta_common["artist"]
+      _meta_common["title"]=_parser_mp3["title"] || _meta_common["title"]
+    }
     if(typeof _meta_common["picture"]=="undefined" ){
       _meta_common["picture"]=[{"data":[],"mime":""}];
-    }else if(!_meta_common["picture"][0].width || !_meta_common["picture"][0].height ){
-      _meta_common["picture"]=[{"data":[],"mime":""}];
+    }else if(typeof _meta_common["picture"].length != "undefined"){
+      if(!_meta_common["picture"][0].width || !_meta_common["picture"][0].height ){
+        _meta_common["picture"]=[{"data":[],"mime":""}];
+      }
     }
-    
     const _t_f_obj={
       "title":_meta_common["title"] || get_filename(fileName),
-      "cover_u8a":_meta_common["picture"][0]["data"] || [],
-      "cover_mime":_meta_common["picture"][0]["format"] || "",
+      "cover_u8a":_meta_common["picture"]["data"] || [],
+      "cover_mime":_meta_common["picture"]["mime"] || "",
       "singer":_meta_common["artist"] || "",
       "album":_meta_common["album"] || "",
       "src":_t_URL,
@@ -1402,6 +1473,7 @@ const MouseScrollHandler=(e)=>{
     }
     if(pageState.move_up_event_id==-1){
       const _target=pageState.list_top-BASEMENT_HEIGHT;
+      // console.log(pageState.list_top,BASEMENT_HEIGHT);
       const _target_cover=pageState.cover_top-BASEMENT_HEIGHT_COVER;
       // console.log(pageState.now_index+1==pageState.songList.length)
       if(pageState.now_index+1==pageState.songList.length){
@@ -1744,12 +1816,38 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
     opacity: 1;
   }
 }
+.mobile_alert{
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  overflow: hidden;
+  display: none;
+}
+@media all and (orientation : portrait){
+.MainBox,.FileDealer,.MousePointerWrapper{
+  display: none;
+  pointer-events: none;
+}
+
+.mobile_alert{
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    color: #000000;
+    // background-color: #000000;
+    justify-content: center;
+    background-color: white;
+    align-items: center;
+    z-index: 1000;
+    font-size: 44px;
+  }
+}
 .MainBox{
   cursor:none;
   height: 100vh;
   width: 100vw;
-  min-width: 1030px;
-  min-height: 630px;
   overflow: hidden;
   position: relative;
   .ToastMessageWrapper{
@@ -1863,7 +1961,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             .pw_item{
               margin-top: 16px;
               width: 50%;
-              height: 400px;
+              height: 100%;
               // display: inline-flex;
             }
             .pw_left{
@@ -2523,7 +2621,7 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             top: 0;
             left: -55px;
             bottom: 0;
-            height: 505px;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2729,7 +2827,210 @@ $generalFontFamily:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
       }
     }
   }
+  .MusicWrapper.mobile_mode{
+    min-width: 580px;
+    min-height: 250px;
+    overflow: hidden;
+    .PopupWindowModifyWrapper{
+      .PopupWindowModify{
+        height: 250px;
+        width: 580px;
+        .title{
+          height: 20px;
+          font-size: 12px;
+        }
+        .window{
+          height: 210px;
+          .pw_item_container{
+            height: 210px;
+            .pw_left{
+              .pw_inputer_item{
+                height: 24px;
+                font-size: 18px;
+                .inputer{
+                  input{
+                    font-size: 18px;
+                  }
+                }
+              }
+              .pw_inputer_item.alert{
+                line-height: 24px;
+              }
+              .pw_inputer_item.info{
+                line-height: 24px;
+              }
+              .pw_inputer_item.sucess{
+                line-height: 24px;
+              }
+            }
+            .pw_right{
+
+              .inputer_cover{
+                input{
+                  opacity: 1;
+                }
+              }
+              .inputer_cover_display{
+                aspect-ratio: 1 / 0.4;
+              }
+              .hint{
+                font-size: 18px;
+              }
+            }
+          }
+          .function_btns{
+            height: 40px;
+            .placeHolder{
+              width: 0px;
+            }
+            .btns_Container{
+              width: 100%;
+              padding: 6px;
+              .pw_btn{
+                line-height: 24px;
+                height: 24px;
+                font-size: 18px;
+              }
+            }
+          }
+        }
+      }
+    }
+    .mid{
+      min-width: 260px;
+      max-width: 370px;
+      .top_item{
+        height: 60px;
+        
+        .sleft{
+          svg{
+            font-size: 16px;
+          }
+          .title{
+            font-size: 11px;
+          }
+          .method{
+            font-size:16px;
+          }
+        }
+        .sright{
+          .ssl{
+            ._1,._3{
+              font-size: 14px;
+            }
+            ._2{
+              font-size: 20px;
+            }
+          }
+          .ssr{
+            .setting_icon{
+              font-size: 20px;
+            }
+            .setting_window{
+              width: 300px;
+            }
+          }
+        }
+      }
+      .middle_item{
+        .transparent_holder{
+          height: 66px;
+          top: 100px;
+        }
+        .list_item{
+          height: 62px;
+          margin-bottom: 12px;
+          .item_left{
+            .title{
+              font-size: 18px;
+              font-weight: bolder;
+            }
+            .singer{
+              font-size: 14px;
+            }
+          }
+          .item_right{
+            svg{
+              font-size: 36px;
+            }
+          }
+        }
+      }
+      .middle_item.nocontent{
+        svg{
+          font-size: 32px;
+        }
+        .Content{
+          font-size: 20px;
+        }
+      }
+      .selected_item{
+        height: 62px;
+        top: 100px;
+        .item_left{
+            .title{
+              font-weight: bolder;
+              font-size: 18px;
+            }
+            .singer{
+              font-size: 14px;
+            }
+          }
+          .item_right{
+            svg{
+              font-size: 36px;
+            }
+          }
+      }
+    }
+    .right{
+      min-width:330px;
+      max-width: 545px;
+      .CoverDisplayer{
+        height: 318px;
+        .SwipeCoverWrapper{
+          left: -25px;
+          .SwipeCoverItem{
+            height: 318px;
+            .AttentionCover{
+              font-size: 55px !important;
+              margin-left: 44px;
+              .slogan{
+                font-size:32px !important;
+              }
+            }
+          }
+        }
+      }
+      
+      .ControlBar{
+        margin-top: 26px;
+        height: 56px;
+        .cb_item{
+          .content{
+            font-size: 24px;
+            height: 24px;
+          }
+        }
+        .cb_item.longer{
+          .content{
+            .slider{
+              .dot{
+                width: 16px;
+              }
+            }
+          }
+        }
+        .cb_item.modify{
+          .content.small{
+            font-size: 12px;
+          }
+        }
+      }
+    }
+  }
 }
+
 @keyframes goRight {
   0%{
     transform: translateX(0%);
